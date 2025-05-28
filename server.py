@@ -89,8 +89,8 @@ class GameManager:
 
 	def new_packet(self, protocol, data):
 		packet = bytes()
-		packet += protocol.to_bytes(1)
-		packet += len(data).to_bytes(4)
+		packet += protocol.to_bytes(1, byteorder='little')
+		packet += len(data).to_bytes(4, byteorder='little')
 		packet += data
 		return packet
 
@@ -105,43 +105,43 @@ class GameManager:
 
 	def send_init_packet(self, uid):
 		data = bytes()
-		data += uid.to_bytes(2)
+		data += uid.to_bytes(2, byteorder='little')
 		# 使用者列表
-		data += len(self.users).to_bytes(1)
+		data += len(self.users).to_bytes(1, byteorder='little')
 		for user in self.users.values():
-			data += user.uid.to_bytes(2)
+			data += user.uid.to_bytes(2, byteorder='little')
 			encoded_name = user.name.encode('utf8')
-			data += len(encoded_name).to_bytes(1)
+			data += len(encoded_name).to_bytes(1, byteorder='little')
 			data += encoded_name
 		# 玩家列表
-		data += len(self.players).to_bytes(1)
+		data += len(self.players).to_bytes(1, byteorder='little')
 		for player in self.players.values():
 			encoded_question = player.question.encode('utf8')
-			data += len(encoded_question).to_bytes(1)
+			data += len(encoded_question).to_bytes(1, byteorder='little')
 			data += encoded_question
-			data += len(player.guess_history).to_bytes(1)
+			data += len(player.guess_history).to_bytes(1, byteorder='little')
 			for guess in players.guess_history:
 				encoded_guess = guess[0].encode('utf8')
-				data += len(encoded_guess).to_bytes(1)
+				data += len(encoded_guess).to_bytes(1, byteorder='little')
 				data += encoded_guess
-				data += guess[1].to_bytes(1)
-			data += player.success_round.to_bytes(2)
+				data += guess[1].to_bytes(1, byteorder='little')
+			data += player.success_round.to_bytes(2, byteorder='little')
 		# 遊戲階段
-		data += self.game_state.to_bytes(1)
+		data += self.game_state.to_bytes(1, byteorder='little')
 		# 玩家順序
-		data += len(self.player_order).to_bytes(1)
+		data += len(self.player_order).to_bytes(1, byteorder='little')
 		for player_uid in self.player_order:
-			data += player_uid.to_bytes(2)
-		data += self.current_guessing_idx.to_bytes(1)
+			data += player_uid.to_bytes(2, byteorder='little')
+		data += self.current_guessing_idx.to_bytes(1, byteorder='little')
 		# 投票狀況
 		encoded_guess = self.temp_guess.encode('utf8')
-		data += len(encoded_guess).to_bytes(1)
+		data += len(encoded_guess).to_bytes(1, byteorder='little')
 		data += encoded_guess
 		
-		data += len(self.votes).to_bytes(1)
+		data += len(self.votes).to_bytes(1, byteorder='little')
 		for vote_uid, vote in self.votes.items():
-			data += vote_uid.to_bytes(2)
-			data += vote.to_bytes(1)
+			data += vote_uid.to_bytes(2, byteorder='little')
+			data += vote.to_bytes(1, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.INIT, data)
 		user = self.users[uid]
@@ -151,18 +151,18 @@ class GameManager:
 			pass
 	
 	def broadcast_connect(self, uid):
-		packet = self.new_packet(PROTOCOL_SERVER.CONNECT, uid.to_bytes(2))
+		packet = self.new_packet(PROTOCOL_SERVER.CONNECT, uid.to_bytes(2, byteorder='little'))
 		self.broadcast(packet, exclude_client=uid)
 	
 	def broadcast_disconnect(self, uid):
-		packet = self.new_packet(PROTOCOL_SERVER.DISCONNECT, uid.to_bytes(2))
+		packet = self.new_packet(PROTOCOL_SERVER.DISCONNECT, uid.to_bytes(2, byteorder='little'))
 		self.broadcast(packet)
 	
 	def broadcast_rename(self, uid, name):
 		data = bytes()
-		data += uid.to_bytes(2)
+		data += uid.to_bytes(2, byteorder='little')
 		encoded_name = name.encode('utf8')
-		data += len(encoded_name).to_bytes(1)
+		data += len(encoded_name).to_bytes(1, byteorder='little')
 		data += encoded_name
 		
 		packet = self.new_packet(PROTOCOL_SERVER.NAME, data)
@@ -170,14 +170,14 @@ class GameManager:
 	
 	def broadcast_join(self, uid):
 		data = bytes()
-		data += uid.to_bytes(2)
+		data += uid.to_bytes(2, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.JOIN, data)
 		self.broadcast(packet)
 	
 	def broadcast_leave(self, uid):
 		data = bytes()
-		data += uid.to_bytes(2)
+		data += uid.to_bytes(2, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.LEAVE, data)
 		self.broadcast(packet)
@@ -185,10 +185,10 @@ class GameManager:
 	def broadcast_start_countdown(self, is_stop = False):
 		data = bytes()
 		if is_stop:
-			data += int(0).to_bytes(1)
+			data += int(0).to_bytes(1, byteorder='little')
 		else:
-			data += int(1).to_bytes(1)
-			data += GameManager.START_COUNTDOWN_DURATION.to_bytes(1)
+			data += int(1).to_bytes(1, byteorder='little')
+			data += GameManager.START_COUNTDOWN_DURATION.to_bytes(1, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.START_COUNTDOWN, data)
 		self.broadcast(packet)
@@ -198,28 +198,28 @@ class GameManager:
 		self.broadcast(packet)
 	
 	def broadcast_game_state(self):
-		packet = self.new_packet(PROTOCOL_SERVER.GAMESTATE, self.game_state.to_bytes(1))
+		packet = self.new_packet(PROTOCOL_SERVER.GAMESTATE, self.game_state.to_bytes(1, byteorder='little'))
 		self.broadcast(packet)
 	
 	def broadcast_player_order(self, include_list = False):
 		data = bytes()
-		data += self.current_guessing_idx.to_bytes(1)
+		data += self.current_guessing_idx.to_bytes(1, byteorder='little')
 		if include_list:
-			data += int(1).to_bytes(1)
-			data += len(self.player_order).to_bytes(1)
+			data += int(1).to_bytes(1, byteorder='little')
+			data += len(self.player_order).to_bytes(1, byteorder='little')
 			for uid in self.player_order:
-				data += uid.to_bytes(2)
+				data += uid.to_bytes(2, byteorder='little')
 		else:
-			data += int(0).to_bytes(1)
+			data += int(0).to_bytes(1, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.GAMESTATE, data)
 		self.broadcast(packet)
 	
 	def broadcast_question(self, player):
 		data = bytes()
-		data += player.uid.to_bytes(2)
+		data += player.uid.to_bytes(2, byteorder='little')
 		encoded_question = player.question.encode('utf8')
-		data += len(encoded_question).to_bytes(1)
+		data += len(encoded_question).to_bytes(1, byteorder='little')
 		data += encoded_question
 		
 		packet = self.new_packet(PROTOCOL_SERVER.QUESTION, data)
@@ -227,7 +227,7 @@ class GameManager:
 		
 		# 傳給玩家本身的資訊不含題目，只做提示已經出好題了
 		data = bytes()
-		data += player.uid.to_bytes(2)
+		data += player.uid.to_bytes(2, byteorder='little')
 		packet = self.new_packet(PROTOCOL_SERVER.QUESTION, data)
 		try:
 			player.user.socket.sendall(packet)
@@ -236,8 +236,8 @@ class GameManager:
 	
 	def broadcast_success(self, uid, success_round):
 		data = bytes()
-		data += uid.to_bytes(2)
-		data += success_round.to_bytes(2)
+		data += uid.to_bytes(2, byteorder='little')
+		data += success_round.to_bytes(2, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.SUCCESS, data)
 		self.broadcast(packet)
@@ -245,7 +245,7 @@ class GameManager:
 	def broadcast_guess(self):
 		data = bytes()
 		encoded_guess = self.temp_guess.encode('utf8')
-		data += len(encoded_guess).to_bytes(2)
+		data += len(encoded_guess).to_bytes(2, byteorder='little')
 		data += encoded_guess
 		
 		packet = self.new_packet(PROTOCOL_SERVER.GUESS, data)
@@ -253,8 +253,8 @@ class GameManager:
 	
 	def broadcast_vote(self, uid, vote):
 		data = bytes()
-		data += uid.to_bytes(2)
-		data += vote.to_bytes(1)
+		data += uid.to_bytes(2, byteorder='little')
+		data += vote.to_bytes(1, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.VOTE, data)
 		self.broadcast(packet)
@@ -265,13 +265,13 @@ class GameManager:
 	
 	def broadcast_guess_record(self, uid, guess, result):
 		data = bytes()
-		data += uid.to_bytes(2)
+		data += uid.to_bytes(2, byteorder='little')
 		
 		encoded_guess = guess.encode('utf8')
-		data += len(encoded_guess).to_bytes(1)
+		data += len(encoded_guess).to_bytes(1, byteorder='little')
 		data += encoded_guess
 		
-		data += result.to_bytes(1)
+		data += result.to_bytes(1, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.GUESS_RECORD, data)
 		self.broadcast(packet)
