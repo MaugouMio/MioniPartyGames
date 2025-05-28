@@ -301,8 +301,8 @@ class GameManager:
 				if not header:
 					break
 					
-				protocol = int.from_bytes(header[0])
-				packet_size = int.from_bytes(header[1:5])
+				protocol = int.from_bytes(header[0], byteorder='little')
+				packet_size = int.from_bytes(header[1:5], byteorder='little')
 				print(f"收到來自 {uid} ({addr}) 的 protocol：{protocol} 長度：{packet_size}")
 				
 				data = bytes()
@@ -424,7 +424,7 @@ class GameManager:
 			if user.uid == self.player_order[self.current_guessing_idx]:
 				return
 			
-			vote = int.from_bytes(message)
+			vote = int.from_bytes(message, byteorder='little')
 			if vote < 0 or vote > 2:
 				return
 			

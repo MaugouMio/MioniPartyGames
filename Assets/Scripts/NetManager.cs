@@ -165,7 +165,6 @@ public class NetManager : MonoBehaviour
 		while (size - offset >= NetPacket.HEADER_SIZE)  // header size
 		{
 			int len = BitConverter.ToInt32(buffer, offset + 1);
-			Debug.Log($"MIO {size} {buffer[0]} {len}");
 			if (size - offset < len + NetPacket.HEADER_SIZE)
 				break;
 
@@ -205,7 +204,6 @@ public class NetManager : MonoBehaviour
 			try
 			{
 				int len = m_Client.GetStream().Read(buffer, offset, m_Client.ReceiveBufferSize - offset);
-				Debug.Log($"MIO {m_Client.GetStream().CanRead} {len}");
 				if (len > 0)
 				{
 					offset += len;
