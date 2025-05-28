@@ -1,16 +1,27 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ConnectPage : MonoBehaviour
 {
 	[SerializeField]
-	private InputField InputIP;
+	private InputField IP_Input;
 	[SerializeField]
 	private Text ConnectHintText;
+	[SerializeField]
+	private GameObject ConnectingMask;
+	[SerializeField]
+	private GameObject NameWindow;
+	[SerializeField]
+	private InputField NameInput;
+	[SerializeField]
+	private Text NameHintText;
+	[SerializeField]
+	private GameObject TopMask;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+	// Start is called once before the first execution of Update after the MonoBehaviour is created
+	void Start()
     {
 		NetManager.Instance.OnConnected = OnConnected;
 		NetManager.Instance.OnDisconnected = OnDisconnected;
@@ -20,7 +31,12 @@ public class ConnectPage : MonoBehaviour
     void Update()
     {
 		if (Input.GetKeyDown(KeyCode.Return))
-			ClickConnect();
+		{
+			if (NameWindow.activeSelf)
+				ClickSetName();
+			else
+				ClickConnect();
+		}
     }
 
 	void OnDestroy()
@@ -31,20 +47,27 @@ public class ConnectPage : MonoBehaviour
 
 	private void OnConnected()
 	{
-		ConnectHintText.text = "³s½u¦¨¥\";
+		ConnectingMask.SetActive(false);
+		NameWindow.SetActive(true);
 	}
 
 	private void OnDisconnected()
 	{
-		ConnectHintText.text = "³s½u¤¤Â_";
+		ConnectingMask.SetActive(false);
+		NameWindow.SetActive(false);
+		TopMask.SetActive(false);
+		ConnectHintText.text = "é€£ç·šä¸­æ–·";
 	}
 
 	public void ClickConnect()
 	{
-		string[] param = InputIP.text.Split(':');
+		if (ConnectingMask.activeSelf)
+			return;
+
+		string[] param = IP_Input.text.Split(':');
 		if (param.Length != 2)
 		{
-			ConnectHintText.text = "½Ğ¿é¤J¥¿½Tªº IP:PORT ®æ¦¡";
+			ConnectHintText.text = "è«‹è¼¸å…¥æ­£ç¢ºçš„ IP:PORT æ ¼å¼";
 			return;
 		}
 
@@ -56,10 +79,31 @@ public class ConnectPage : MonoBehaviour
 		}
 		catch
 		{
-			ConnectHintText.text = "½Ğ¿é¤J¥¿½Tªº IP:PORT ®æ¦¡";
+			ConnectHintText.text = "è«‹è¼¸å…¥æ­£ç¢ºçš„ IP:PORT æ ¼å¼";
 			return;
 		}
 
-		ConnectHintText.text = "³s½u¤¤";
+		ConnectingMask.SetActive(true);
+	}
+
+	public void ClickSetName()
+	{
+		if (TopMask.activeSelf)
+			return;
+
+		byte[] encodedName = System.Text.Encoding.UTF8.GetBytes(NameInput.text);
+		if (encodedName.Length == 0)
+		{
+			NameHintText.text = "è«‹è¼¸å…¥è¦ä½¿ç”¨çš„åç¨±";
+			return;
+		}
+		if (encodedName.Length > 255)
+		{
+			NameHintText.text = "è«‹ç¸®çŸ­åç¨±å†è©¦";
+			return;
+		}
+
+		NetManager.Instance.SendName(encodedName);
+		SceneManager.LoadScene("GameScene");
 	}
 }

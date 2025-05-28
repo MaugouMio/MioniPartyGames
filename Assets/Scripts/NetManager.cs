@@ -5,58 +5,7 @@ using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-public enum PROTOCOL_CLIENT
-{
-	NAME,
-	JOIN,
-	LEAVE,
-	START,
-	CANCEL_START,
-	QUESTION,
-	GUESS,
-	VOTE,
-}
-
-public enum PROTOCOL_SERVER
-{
-	INIT,
-	CONNECT,
-	DISCONNECT,
-	NAME,
-	JOIN,
-	LEAVE,
-	START_COUNTDOWN,
-	START,
-	GAMESTATE,
-	PLAYER_ORDER,
-	QUESTION,
-	SUCCESS,
-	GUESS,
-	VOTE,
-	GUESS_AGAIN,
-	GUESS_RECORD,
-	END,
-}
-
-public class NetPacket
-{
-	public const int HEADER_SIZE = 5;
-
-	public byte protocol;
-	public int size;
-
-	public byte[] data;
-
-	public byte[] ToBytes()
-	{
-		byte[] bytes = new byte[HEADER_SIZE + size];
-		bytes[0] = protocol;
-		Array.Copy(BitConverter.GetBytes(size), 0, bytes, 1, sizeof(int));
-		return bytes;
-	}
-}
-
-public class NetManager : MonoBehaviour
+public partial class NetManager : MonoBehaviour
 {
 	public static NetManager Instance { get; private set; }
 
@@ -168,10 +117,7 @@ public class NetManager : MonoBehaviour
 			if (size - offset < len + NetPacket.HEADER_SIZE)
 				break;
 
-			NetPacket packet = new NetPacket();
-			packet.protocol = buffer[offset];
-			packet.size = len;
-			packet.data = new byte[len];
+			NetPacket packet = new NetPacket(buffer[offset], len, new byte[len]);
 			Array.Copy(buffer, offset + NetPacket.HEADER_SIZE, packet.data, 0, len);
 
 			offset += len + NetPacket.HEADER_SIZE;
