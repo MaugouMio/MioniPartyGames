@@ -276,8 +276,9 @@ class GameManager:
 		packet = self.new_packet(PROTOCOL_SERVER.GUESS_RECORD, data)
 		self.broadcast(packet)
 	
-	def broadcast_end(self):
-		packet = self.new_packet(PROTOCOL_SERVER.END, bytes())
+	def broadcast_end(self, is_force = False):
+		end_type = 1 if is_force else 0
+		packet = self.new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder='little'))
 		self.broadcast(packet)
 	
 	def handle_client(self, conn, addr):
@@ -540,6 +541,12 @@ class GameManager:
 		nickname = self.players[uid].name
 		del self.players[uid]
 		if self.game_state != GAMESTATE.WAITING:
+			if len(self.players) < 2:
+				self.reset_game()
+				self.broadcast_leave(uid)
+				self.broadcast_end(True)
+				return
+			
 			order_index = self.player_order.index(uid)
 			del self.player_order[order_index]
 			if order_index == self.current_guessing_idx:
