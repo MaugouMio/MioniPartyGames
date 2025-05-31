@@ -30,6 +30,18 @@ public partial class NetManager : MonoBehaviour
 		}
 	}
 
+	void Update()
+	{
+		while (true)
+		{
+			NetPacket packet = GetPacket();
+			if (packet == null)
+				break;
+
+			ProcessReceive(packet);
+		}
+	}
+
 	void OnDestroy()
 	{
 		Disconnect();
@@ -86,7 +98,7 @@ public partial class NetManager : MonoBehaviour
 		OnDisconnected?.Invoke();
 	}
 
-	public NetPacket GetPacket()
+	private NetPacket GetPacket()
 	{
 		NetPacket packet = null;
 

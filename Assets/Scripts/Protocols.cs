@@ -86,6 +86,47 @@ public class ByteWriter
 
 public partial class NetManager
 {
+	private void ProcessReceive(NetPacket packet)
+	{
+		switch ((PROTOCOL_SERVER)packet.protocol)
+		{
+		case PROTOCOL_SERVER.INIT:
+			break;
+		case PROTOCOL_SERVER.CONNECT:
+			break;
+		case PROTOCOL_SERVER.DISCONNECT:
+			break;
+		case PROTOCOL_SERVER.NAME:
+			break;
+		case PROTOCOL_SERVER.JOIN:
+			break;
+		case PROTOCOL_SERVER.LEAVE:
+			break;
+		case PROTOCOL_SERVER.START_COUNTDOWN:
+			break;
+		case PROTOCOL_SERVER.START:
+			break;
+		case PROTOCOL_SERVER.GAMESTATE:
+			break;
+		case PROTOCOL_SERVER.PLAYER_ORDER:
+			break;
+		case PROTOCOL_SERVER.QUESTION:
+			break;
+		case PROTOCOL_SERVER.SUCCESS:
+			break;
+		case PROTOCOL_SERVER.GUESS:
+			break;
+		case PROTOCOL_SERVER.VOTE:
+			break;
+		case PROTOCOL_SERVER.GUESS_AGAIN:
+			break;
+		case PROTOCOL_SERVER.GUESS_RECORD:
+			break;
+		case PROTOCOL_SERVER.END:
+			break;
+		}
+	}
+
 	public void SendName(byte[] encodedName)
 	{
 		ByteWriter byteWriter = new ByteWriter();
