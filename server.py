@@ -116,6 +116,7 @@ class GameManager:
 		# 玩家列表
 		data += len(self.players).to_bytes(1, byteorder='little')
 		for player in self.players.values():
+			data += player.user.uid.to_bytes(2, byteorder='little')
 			encoded_question = player.question.encode('utf8')
 			data += len(encoded_question).to_bytes(1, byteorder='little')
 			data += encoded_question

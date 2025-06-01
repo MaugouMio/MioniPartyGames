@@ -8,15 +8,15 @@ using System.IO;
 
 public class UserData
 {
-	public ushort UID { get; set; }
-	public string Name { get; set; }
+	public ushort UID { get; set; } = 0;
+	public string Name { get; set; } = "";
 }
 
 public class PlayerData
 {
-	public ushort UID { get; set; }
-	public string Question { get; set; }
-	public int SuccessRound { get; set; }
+	public ushort UID { get; set; } = 0;
+	public string Question { get; set; } = "";
+	public ushort SuccessRound { get; set; } = 0;
 	public List<Tuple<string, byte>> GuessHistory { get; set; } = new List<Tuple<string, byte>>();
 
 	public void Reset()
@@ -48,16 +48,26 @@ public class GameData
 		}
 	}
 
+	public ushort SelfUID { get; set; } = 0;
 	public Dictionary<ushort, UserData> UserDatas { get; set; } = new Dictionary<ushort, UserData>();
 	public Dictionary<ushort, PlayerData> PlayerDatas { get; set; } = new Dictionary<ushort, PlayerData>();
+	public bool IsCountingDownStart { get; set; } = false;
 	public GameState CurrentState { get; set; } = GameState.WAITING;
 	public List<ushort> PlayerOrder { get; set; } = new List<ushort>();
-	public int GuessingPlayerIndex { get; set; } = 0;
+	public byte GuessingPlayerIndex { get; set; } = 0;
 	public string VotingGuess { get; set; } = "";
 	public Dictionary<ushort, byte> Votes { get; set; } = new Dictionary<ushort, byte>();
 
+	public void Reset()
+	{
+		SelfUID = 0;
+		UserDatas.Clear();
+		PlayerDatas.Clear();
+		ResetGame();
+	}
 	public void ResetGame()
 	{
+		IsCountingDownStart = false;
 		CurrentState = GameState.WAITING;
 		PlayerOrder.Clear();
 		GuessingPlayerIndex = 0;
