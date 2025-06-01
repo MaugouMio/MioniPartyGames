@@ -235,10 +235,7 @@ public partial class NetManager
 			{
 				string guess = reader.ReadString();
 				byte result = reader.ReadByte();
-				if (result == 1)
-					player.GuessHistory.Add($"<color=#00ba00>✔</color> 是{guess}");
-				else
-					player.GuessHistory.Add($"<color=#ba0000>✘</color> 不是{guess}");
+				player.AddGuessRecord(guess, result);
 			}
 			player.SuccessRound = reader.ReadUInt16();
 			GameData.Instance.PlayerDatas[uid] = player;
@@ -428,7 +425,7 @@ public partial class NetManager
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 		{
 			PlayerData player = GameData.Instance.PlayerDatas[uid];
-			player.GuessHistory.Add(new Tuple<string, byte>(guess, result));
+			player.AddGuessRecord(guess, result);
 		}
 	}
 	private void OnGameEnd(NetPacket packet)

@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System;
 using System.Net.Sockets;
 using System.Threading;
@@ -25,14 +25,22 @@ public class PlayerData
 		SuccessRound = 0;
 		GuessHistory.Clear();
 	}
+
+	public void AddGuessRecord(string guess, byte result)
+	{
+		if (result == 1)
+			GuessHistory.Add($"<color=#00ba00>âœ”</color> æ˜¯{guess}");
+		else
+			GuessHistory.Add($"<color=#ba0000>âœ˜</color> ä¸æ˜¯{guess}");
+	}
 }
 
 public enum GameState
 {
-	WAITING,    // ¥i¥H¥[¤J¹CÀ¸ªº¶¥¬q
-	PREPARING,  // ¹CÀ¸­è¶}©lªº¥XÃD¶¥¬q
-	GUESSING,   // ¬Y­Óª±®a²qÃD·í¤¤
-	VOTING,     // ¬Y­Óª±®a²q´ú¤@­ÓÃş§O¡Aµ¥«İ¨ä¥L¤H§ë²¼¬O§_²Å¦X
+	WAITING,    // å¯ä»¥åŠ å…¥éŠæˆ²çš„éšæ®µ
+	PREPARING,  // éŠæˆ²å‰›é–‹å§‹çš„å‡ºé¡Œéšæ®µ
+	GUESSING,   // æŸå€‹ç©å®¶çŒœé¡Œç•¶ä¸­
+	VOTING,     // æŸå€‹ç©å®¶çŒœæ¸¬ä¸€å€‹é¡åˆ¥ï¼Œç­‰å¾…å…¶ä»–äººæŠ•ç¥¨æ˜¯å¦ç¬¦åˆ
 }
 
 public class GameData
