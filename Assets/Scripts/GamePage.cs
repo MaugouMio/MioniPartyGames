@@ -22,14 +22,14 @@ public class GamePage : MonoBehaviour
 	// Start is called once before the first execution of Update after the MonoBehaviour is created
 	void Start()
     {
-		NetManager.Instance.OnDisconnected = OnDisconnected;
+		
     }
 
     // Update is called once per frame
     void Update()
     {
 		if (needUpdate)
-			_UpdateData();
+			UpdateDataReal();
 
 		// if (Input.GetKeyDown(KeyCode.Return))
 		// {
@@ -43,18 +43,9 @@ public class GamePage : MonoBehaviour
 	void OnDestroy()
 	{
 		Instance = null;
-		NetManager.Instance.OnDisconnected = null;
 	}
 
-	private void OnDisconnected()
-	{
-		// ConnectingMask.SetActive(false);
-		// NameWindow.SetActive(false);
-		// TopMask.SetActive(false);
-		// ConnectHintText.text = "連線中斷";
-	}
-
-	private void _UpdateData()
+	private void UpdateDataReal()
 	{
 		UpdatePlayerInfo();
 

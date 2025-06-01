@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine.SceneManagement;
 
 public partial class NetManager : MonoBehaviour
 {
@@ -96,6 +97,9 @@ public partial class NetManager : MonoBehaviour
 			m_ReadThread = null;
 		}
 		OnDisconnected?.Invoke();
+
+		if (SceneManager.GetActiveScene().name != "LoginScene")
+			SceneManager.LoadScene("LoginScene");
 	}
 
 	private NetPacket GetPacket()
