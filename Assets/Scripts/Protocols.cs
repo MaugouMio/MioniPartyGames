@@ -259,6 +259,10 @@ public partial class NetManager
 			byte vote = reader.ReadByte();
 			GameData.Instance.Votes[uid] = vote;
 		}
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateData();
 	}
 	private void OnUserConnect(NetPacket packet)
 	{
@@ -286,6 +290,10 @@ public partial class NetManager
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
 		GameData.Instance.PlayerDatas[uid] = new PlayerData { UID = uid };
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnPlayerLeave(NetPacket packet)
 	{
@@ -295,6 +303,10 @@ public partial class NetManager
 			GameData.Instance.PlayerDatas.Remove(uid);
 		if (GameData.Instance.PlayerOrder.Contains(uid))
 			GameData.Instance.PlayerOrder.Remove(uid);
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnStartCountdown(NetPacket packet)
 	{
@@ -336,6 +348,10 @@ public partial class NetManager
 			ushort uid = reader.ReadUInt16();
 			GameData.Instance.PlayerOrder.Add(uid);
 		}
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnQuestionAssigned(NetPacket packet)
 	{
@@ -354,6 +370,10 @@ public partial class NetManager
 				player.Question = question;
 			}
 		}
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnPlayerSuccess(NetPacket packet)
 	{
@@ -365,6 +385,10 @@ public partial class NetManager
 			PlayerData player = GameData.Instance.PlayerDatas[uid];
 			player.SuccessRound = successRound;
 		}
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateData();
 	}
 	private void OnPlayerGuessed(NetPacket packet)
 	{
@@ -372,6 +396,10 @@ public partial class NetManager
 		GameData.Instance.VotingGuess = reader.ReadString();
 		GameData.Instance.Votes.Clear();
 		GameData.Instance.CurrentState = GameState.VOTING;
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateData();
 	}
 	private void OnPlayerVoted(NetPacket packet)
 	{
@@ -379,6 +407,10 @@ public partial class NetManager
 		ushort uid = reader.ReadUInt16();
 		byte vote = reader.ReadByte();
 		GameData.Instance.Votes[uid] = vote;
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnGuessAgainRequired(NetPacket packet)
 	{
