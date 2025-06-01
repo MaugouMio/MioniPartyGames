@@ -14,18 +14,6 @@ public class PlayerInfo : MonoBehaviour
 	[SerializeField]
 	private GameObject selfIndicator;
 
-	// Start is called once before the first execution of Update after the MonoBehaviour is created
-	void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
 	public void UpdateData(PlayerData playerData)
 	{
 		if (!GameData.Instance.UserDatas.ContainsKey(playerData.UID))

@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Playables;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GamePage : MonoBehaviour
@@ -11,6 +9,12 @@ public class GamePage : MonoBehaviour
 
 	[SerializeField]
 	private List<PlayerInfo> PlayerList;
+	[SerializeField]
+	private TextList EventList;
+	[SerializeField]
+	private TextList GuessRecord;
+	[SerializeField]
+	private TextList CurrentPlayerGuessRecord;
 
 	private bool needUpdate = false;
 
@@ -48,6 +52,10 @@ public class GamePage : MonoBehaviour
 	private void UpdateDataReal()
 	{
 		UpdatePlayerInfo();
+		UpdateMiddlePage();
+		UpdateEventList();
+		UpdateSelfGuessRecord();
+		UpdateCurrentPlayerGuessRecord();
 
 		needUpdate = false;
 	}
@@ -77,11 +85,45 @@ public class GamePage : MonoBehaviour
 
 				obj.gameObject.SetActive(true);
 				obj.UpdateData(player);
+				idx++;
 			}
 
 			// 關閉未使用的物件
 			while (idx < PlayerList.Count)
 				PlayerList[idx++].gameObject.SetActive(false);
 		}
+	}
+
+	public void UpdateMiddlePage()
+	{
+
+	}
+
+	public void UpdateEventList()
+	{
+		EventList.UpdateData(GameData.Instance.EventRecord);
+	}
+
+	public void UpdateSelfGuessRecord()
+	{
+		if (!GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData player))
+		{
+			GuessRecord.UpdateData(null);
+			return;
+		}
+
+		GuessRecord.UpdateData(player.GuessHistory);
+	}
+
+	public void UpdateCurrentPlayerGuessRecord()
+	{
+		ushort uid = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+		{
+			GuessRecord.UpdateData(null);
+			return;
+		}
+
+		CurrentPlayerGuessRecord.UpdateData(player.GuessHistory);
 	}
 }

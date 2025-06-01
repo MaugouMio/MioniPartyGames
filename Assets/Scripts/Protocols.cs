@@ -235,7 +235,10 @@ public partial class NetManager
 			{
 				string guess = reader.ReadString();
 				byte result = reader.ReadByte();
-				player.GuessHistory.Add(new Tuple<string, byte>(guess, result));
+				if (result == 1)
+					player.GuessHistory.Add($"<color=#00ba00>✔</color> 是{guess}");
+				else
+					player.GuessHistory.Add($"<color=#ba0000>✘</color> 不是{guess}");
 			}
 			player.SuccessRound = reader.ReadUInt16();
 			GameData.Instance.PlayerDatas[uid] = player;
