@@ -133,6 +133,17 @@ public class ByteWriter
 	public void WriteInt32(int value) { bw.Write(value); }
 	public void WriteUInt32(uint value) { bw.Write(value); }
 	public void WriteBytes(byte[] value) { bw.Write(value); }
+	public void WriteString(string value)
+	{
+		if (string.IsNullOrEmpty(value))
+		{
+			bw.Write((byte)0);
+			return;
+		}
+		byte[] bytes = System.Text.Encoding.UTF8.GetBytes(value);
+		bw.Write((byte)bytes.Length);
+		bw.Write(bytes);
+	}
 
 	public byte[] GetBytes() { return stream.ToArray(); }
 }
@@ -394,12 +405,47 @@ public partial class NetManager
 		// TODO: 顯示結算排名
 	}
 
+	// =========================================================
+
 	public void SendName(byte[] encodedName)
 	{
-		ByteWriter byteWriter = new ByteWriter();
-		byteWriter.WriteBytes(encodedName);
-
-		byte[] data = byteWriter.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.NAME, data.Length, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.NAME, encodedName.Length, encodedName);
+		SendPacket(packet);
+	}
+	public void SendJoin()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.JOIN, 0, new byte[0]);
+		SendPacket(packet);
+	}
+	public void SendLeave()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.LEAVE, 0, new byte[0]);
+		SendPacket(packet);
+	}
+	public void SendStart()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.START, 0, new byte[0]);
+		SendPacket(packet);
+	}
+	public void SendCancelStart()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CANCEL_START, 0, new byte[0]);
+		SendPacket(packet);
+	}
+	public void SendAssignQuestion(byte[] encodedQuestion)
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.QUESTION, encodedQuestion.Length, encodedQuestion);
+		SendPacket(packet);
+	}
+	public void SendGuess(byte[] encodedGuess)
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GUESS, encodedGuess.Length, encodedGuess);
+		SendPacket(packet);
+	}
+	public void SendVote(byte vote)
+	{
+		byte[] data = new byte[1] { vote };
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VOTE, 1, data);
+		SendPacket(packet);
 	}
 }
