@@ -12,7 +12,7 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private Button JoinButton;
 	[SerializeField]
-	private Button LeaveButton;
+	private Text JoinButtonText;
 
 	[SerializeField]
 	private GameObject IdlePage;
@@ -131,8 +131,8 @@ public class GamePage : MonoBehaviour
 		}
 
 		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
-		JoinButton.interactable = !isJoined && GameData.Instance.CurrentState == GameState.WAITING;
-		LeaveButton.interactable = isJoined;
+		JoinButton.interactable = isJoined || GameData.Instance.CurrentState == GameState.WAITING;
+		JoinButtonText.text = isJoined ? "離開遊戲" : "加入遊戲";
 	}
 
 	public void UpdateMiddlePage()
@@ -226,5 +226,22 @@ public class GamePage : MonoBehaviour
 		{
 			StartButton.interactable = false;
 		}
+	}
+
+	public void ClickJoinGame()
+	{
+		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
+		if (isJoined)
+			NetManager.Instance.SendLeave();
+		else
+			NetManager.Instance.SendJoin();
+	}
+
+	public void ClickStartGame()
+	{
+		if (GameData.Instance.IsCountingDownStart)
+			NetManager.Instance.SendCancelStart();
+		else
+			NetManager.Instance.SendStart();
 	}
 }
