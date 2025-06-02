@@ -9,6 +9,10 @@ public class GamePage : MonoBehaviour
 
 	[SerializeField]
 	private List<PlayerInfo> PlayerList;
+	[SerializeField]
+	private Button JoinButton;
+	[SerializeField]
+	private Button LeaveButton;
 
 	[SerializeField]
 	private GameObject IdlePage;
@@ -43,8 +47,12 @@ public class GamePage : MonoBehaviour
 	private TextList GuessRecord;
 	[SerializeField]
 	private TextList CurrentPlayerGuessRecord;
+	[SerializeField]
+	private Button StartButton;
+	[SerializeField]
+	private Text StartButtonText;
 
-	private bool needUpdate = false;
+	private bool needUpdate = true;
 
 	void Awake()
 	{
@@ -84,6 +92,7 @@ public class GamePage : MonoBehaviour
 		UpdateEventList();
 		UpdateSelfGuessRecord();
 		UpdateCurrentPlayerGuessRecord();
+		UpdateStartButton();
 
 		needUpdate = false;
 	}
@@ -120,6 +129,10 @@ public class GamePage : MonoBehaviour
 			while (idx < PlayerList.Count)
 				PlayerList[idx++].gameObject.SetActive(false);
 		}
+
+		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
+		JoinButton.interactable = !isJoined && GameData.Instance.CurrentState == GameState.WAITING;
+		LeaveButton.interactable = isJoined;
 	}
 
 	public void UpdateMiddlePage()
@@ -200,5 +213,18 @@ public class GamePage : MonoBehaviour
 		}
 
 		CurrentPlayerGuessRecord.UpdateData(player.GuessHistory);
+	}
+
+	public void UpdateStartButton()
+	{
+		if (GameData.Instance.CurrentState == GameState.WAITING)
+		{
+			StartButton.interactable = true;
+			StartButtonText.text = GameData.Instance.IsCountingDownStart ? "取消開始" : "開始遊戲";
+		}
+		else
+		{
+			StartButton.interactable = false;
+		}
 	}
 }

@@ -1606,6 +1606,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PlayerList:
   - {fileID: 1512444768}
+  JoinButton: {fileID: 100328149}
+  LeaveButton: {fileID: 1461888580}
   IdlePage: {fileID: 501452885}
   QuestionPage: {fileID: 1529769693}
   PlayerQuestionPage: {fileID: 1389245007}
@@ -1621,6 +1623,8 @@ MonoBehaviour:
   EventList: {fileID: 407485967}
   GuessRecord: {fileID: 1555532119}
   CurrentPlayerGuessRecord: {fileID: 1636731741}
+  StartButton: {fileID: 1234196060}
+  StartButtonText: {fileID: 870754687}
 --- !u!1 &518894369
 GameObject:
   m_ObjectHideFlags: 0
