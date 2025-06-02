@@ -162,7 +162,7 @@ public class GamePage : MonoBehaviour
 
 					bool isSelfGuessing = guessingPlayerUID == GameData.Instance.SelfUID;
 					GuessedText.gameObject.SetActive(!isSelfGuessing);
-					GuessedText.text = "____";
+					GuessedText.text = "＿＿＿＿＿＿";
 					GuessInput.gameObject.SetActive(isSelfGuessing);
 
 					GuessConfirmButtons.SetActive(isSelfGuessing);
@@ -243,5 +243,51 @@ public class GamePage : MonoBehaviour
 			NetManager.Instance.SendCancelStart();
 		else
 			NetManager.Instance.SendStart();
+	}
+
+	public void ClickAssignQuestion()
+	{
+		byte[] encodedQuestion = System.Text.Encoding.UTF8.GetBytes(QuestionInput.text);
+		if (encodedQuestion.Length == 0)
+		{
+			// TODO: 提示問題不可為空
+			return;
+		}
+		if (encodedQuestion.Length > 255)
+		{
+			// TODO: 提示問題過長
+			return;
+		}
+
+		NetManager.Instance.SendAssignQuestion(encodedQuestion);
+		QuestionInput.text = "";
+	}
+
+	public void ClickConfirmGuess()
+	{
+		byte[] encodedGuess = System.Text.Encoding.UTF8.GetBytes(GuessInput.text);
+		if (encodedGuess.Length == 0)
+		{
+			// TODO: 提示猜測內容不可為空
+			return;
+		}
+		if (encodedGuess.Length > 255)
+		{
+			// TODO: 提示猜測內容過長
+			return;
+		}
+
+		NetManager.Instance.SendGuess(encodedGuess);
+		GuessInput.text = "";
+	}
+
+	public void ClickVoteOption(int voteOption)
+	{
+		if (voteOption < 0 || voteOption > 2)
+		{
+			Debug.LogError($"Invalid vote option: {voteOption}");
+			return;
+		}
+		NetManager.Instance.SendVote((byte)voteOption);
 	}
 }
