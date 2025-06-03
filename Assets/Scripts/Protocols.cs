@@ -499,13 +499,16 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		bool isForceEnd = reader.ReadByte() == 1;
-
 		GameData.Instance.CurrentState = GameState.WAITING;
 
 		GameData.Instance.AddEventRecord(isForceEnd ? "遊戲已被中斷" : "遊戲結束");
-		if (!isForceEnd)
+
+		// 更新介面
+		if (GamePage.Instance != null)
 		{
-			// TODO: 顯示結算排名
+			GamePage.Instance.UpdateData();
+			if (!isForceEnd)
+				GamePage.Instance.ShowGameResult();
 		}
 	}
 

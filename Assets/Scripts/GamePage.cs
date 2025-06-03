@@ -54,6 +54,11 @@ public class GamePage : MonoBehaviour
 	private Text StartButtonText;
 
 	[SerializeField]
+	private GameObject GameResultWindow;
+	[SerializeField]
+	private Text GameResultText;
+
+	[SerializeField]
 	private Text StartCountdownText;
 
 	private bool needUpdate = true;
@@ -253,6 +258,9 @@ public class GamePage : MonoBehaviour
 
 	public void StartCountdown(int seconds)
 	{
+		// 開始倒數就自動關閉上一場的結果顯示
+		GameResultWindow.SetActive(false);
+
 		countdownCoroutine = Countdown(seconds);
 		StartCoroutine(countdownCoroutine);
 	}
@@ -265,6 +273,35 @@ public class GamePage : MonoBehaviour
 			StartCountdownText.text = "";
 			countdownCoroutine = null;
 		}
+	}
+
+	public void ShowGameResult()
+	{
+		List<Tuple<ushort, ushort>> resultList = new List<Tuple<ushort, ushort>>();
+		foreach (var player in GameData.Instance.PlayerDatas.Values)
+			resultList.Add(new Tuple<ushort, ushort>(player.UID, player.SuccessRound));
+		// 按照成功回合由低到高排序
+		resultList.Sort((a, b) => a.Item2.CompareTo(b.Item2));
+
+		string resultText = "";
+		int currentRank = 0;
+		for (int i = 0; i < resultList.Count; i++)
+		{
+			if (resultList[i].Item2 > resultList[currentRank].Item2)
+				currentRank = i;
+
+			string playerName = GameData.Instance.UserDatas[resultList[i].Item1].Name;
+			string line = $"{currentRank + 1}.\t{playerName} - {resultList[i].Item2} 輪";
+			if (resultList[i].Item1 == GameData.Instance.SelfUID)
+				line = $"<color=blue>{line}</color>";
+
+			if (i > 0)
+				resultText += "\n";
+			resultText += line;
+		}
+
+		GameResultText.text = resultText;
+		GameResultWindow.SetActive(true);
 	}
 
 	public void ClickJoinGame()
@@ -328,5 +365,10 @@ public class GamePage : MonoBehaviour
 			return;
 		}
 		NetManager.Instance.SendVote((byte)voteOption);
+	}
+
+	public void ClickCloseResult()
+	{
+		GameResultWindow.SetActive(false);
 	}
 }
