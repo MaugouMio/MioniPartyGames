@@ -13,6 +13,8 @@ public class TextList : MonoBehaviour
 	{
 		if (textList.Count == 0)
 			Debug.LogError($"TextList component is empty for object {gameObject.name}");
+		else
+			textList[0].gameObject.SetActive(false); // 初始時隱藏第一個 Text 元件
 	}
 
 	public void UpdateData(IEnumerable<string> stringList)

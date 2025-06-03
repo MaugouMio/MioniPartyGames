@@ -56,6 +56,7 @@ public class NetPacket
 		byte[] bytes = new byte[HEADER_SIZE + size];
 		bytes[0] = protocol;
 		Array.Copy(BitConverter.GetBytes(size), 0, bytes, 1, sizeof(int));
+		Array.Copy(data, 0, bytes, HEADER_SIZE, size);
 		return bytes;
 	}
 }

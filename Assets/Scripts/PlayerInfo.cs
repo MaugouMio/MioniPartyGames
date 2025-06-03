@@ -23,13 +23,20 @@ public class PlayerInfo : MonoBehaviour
 		nameText.text = userData.Name;
 		questionText.text = playerData.Question;
 
-		bool isProcessingPlayer = playerData.UID == GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
-		if (playerData.SuccessRound > 0)
-			stateMask.color = new Color(0f, 0f, 0f, 0.7f);
-		else if (isProcessingPlayer && (GameData.Instance.CurrentState == GameState.GUESSING || GameData.Instance.CurrentState == GameState.VOTING))
-			stateMask.color = new Color(1f, 1f, 90f / 255f, 0.5f);
-		else
+		if (GameData.Instance.CurrentState == GameState.WAITING)
+		{
 			stateMask.color = Color.clear;
+		}
+		else
+		{
+			bool isProcessingPlayer = playerData.UID == GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+			if (playerData.SuccessRound > 0)
+				stateMask.color = new Color(0f, 0f, 0f, 0.7f);
+			else if (isProcessingPlayer && (GameData.Instance.CurrentState == GameState.GUESSING || GameData.Instance.CurrentState == GameState.VOTING))
+				stateMask.color = new Color(1f, 1f, 90f / 255f, 0.5f);
+			else
+				stateMask.color = Color.clear;
+		}
 
 		if (GameData.Instance.CurrentState == GameState.VOTING && GameData.Instance.Votes.TryGetValue(playerData.UID, out byte vote))
 		{

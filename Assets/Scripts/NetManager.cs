@@ -1,9 +1,10 @@
-using UnityEngine;
 using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public partial class NetManager : MonoBehaviour
@@ -28,6 +29,7 @@ public partial class NetManager : MonoBehaviour
 		{
 			Instance = this;
 			DontDestroyOnLoad(gameObject);
+			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 		}
 	}
 

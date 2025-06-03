@@ -69,13 +69,8 @@ public class GamePage : MonoBehaviour
 	void Awake()
 	{
 		Instance = this;
+		GameResultWindow.SetActive(false);
 	}
-
-	// Start is called once before the first execution of Update after the MonoBehaviour is created
-	void Start()
-    {
-		
-    }
 
     // Update is called once per frame
     void Update()
@@ -115,9 +110,9 @@ public class GamePage : MonoBehaviour
 
 	public void UpdatePlayerInfo()
 	{
+		int idx = 0;
 		if (GameData.Instance.CurrentState == GameState.WAITING)
 		{
-			int idx = 0;
 			foreach (var player in GameData.Instance.PlayerDatas.Values)
 			{
 				PlayerInfo obj;
@@ -136,11 +131,34 @@ public class GamePage : MonoBehaviour
 				obj.UpdateData(player);
 				idx++;
 			}
-
-			// 關閉未使用的物件
-			while (idx < PlayerList.Count)
-				PlayerList[idx++].gameObject.SetActive(false);
 		}
+		else
+		{
+			foreach (var uid in GameData.Instance.PlayerOrder)
+			{
+				if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+					continue;
+
+				PlayerInfo obj;
+				if (idx >= PlayerList.Count)
+				{
+					obj = Instantiate(PlayerList[0]);
+					obj.transform.SetParent(PlayerList[0].transform.parent, false);
+					PlayerList.Add(obj);
+				}
+				else
+				{
+					obj = PlayerList[idx];
+				}
+
+				obj.gameObject.SetActive(true);
+				PlayerList[idx].UpdateData(player);
+				idx++;
+			}
+		}
+		// 關閉未使用的物件
+		while (idx < PlayerList.Count)
+			PlayerList[idx++].gameObject.SetActive(false);
 
 		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
 		JoinButton.interactable = isJoined || GameData.Instance.CurrentState == GameState.WAITING;
@@ -208,6 +226,9 @@ public class GamePage : MonoBehaviour
 
 	public void UpdateSelfGuessRecord(bool isNewRecord = false)
 	{
+		if (GameData.Instance.CurrentState == GameState.WAITING)
+			return;
+
 		if (!GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData player))
 		{
 			GuessRecord.UpdateData(null);
@@ -221,6 +242,9 @@ public class GamePage : MonoBehaviour
 
 	public void UpdateCurrentPlayerGuessRecord(bool isNewRecord = false)
 	{
+		if (GameData.Instance.CurrentState == GameState.WAITING)
+			return;
+
 		ushort uid = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
 		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 		{

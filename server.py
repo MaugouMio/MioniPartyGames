@@ -2,6 +2,7 @@ import socket
 import threading
 import random
 import time
+import traceback
 
 class GLOBAL:
 	uid_serial = 1
@@ -299,11 +300,11 @@ class GameManager:
 
 		try:
 			while True:
-				header = conn.recv(8, socket.MSG_WAITALL)
+				header = conn.recv(5, socket.MSG_WAITALL)
 				if not header:
 					break
 					
-				protocol = int.from_bytes(header[0], byteorder='little')
+				protocol = header[0]
 				packet_size = int.from_bytes(header[1:5], byteorder='little')
 				print(f"收到來自 {uid} ({addr}) 的 protocol：{protocol} 長度：{packet_size}")
 				
@@ -325,7 +326,8 @@ class GameManager:
 				self.thread_lock.acquire()
 				self.process_message(user, protocol, data)
 				self.thread_lock.release()
-		except:
+		except Exception as e:
+			print(traceback.format_exc())
 			print(f"{uid} ({addr}) 連線中斷")
 		finally:
 			self.thread_lock.acquire()
@@ -539,7 +541,6 @@ class GameManager:
 			return
 		
 		self.stop_countdown()
-		nickname = self.players[uid].name
 		del self.players[uid]
 		if self.game_state != GAMESTATE.WAITING:
 			if len(self.players) < 2:
