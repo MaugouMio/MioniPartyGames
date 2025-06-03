@@ -349,6 +349,8 @@ class GameManager:
 				return
 			
 			user.name = new_name
+			print(f"使用者 {user.uid} 設定名稱為 {new_name}")
+			
 			self.broadcast_rename(user.uid, new_name)
 		elif protocol == PROTOCOL_CLIENT.JOIN:
 			if self.game_state != GAMESTATE.WAITING:
@@ -358,11 +360,13 @@ class GameManager:
 			
 			player = Player(user)
 			self.players[user.uid] = player
+			print(f"使用者 {user.uid} 加入遊戲")
 			
 			self.stop_countdown()
 			self.broadcast_join(user.uid)
 		elif protocol == PROTOCOL_CLIENT.LEAVE:
 			self.remove_player(user.uid)
+			print(f"使用者 {user.uid} 退出遊戲")
 		elif protocol == PROTOCOL_CLIENT.START:
 			if self.game_state != GAMESTATE.WAITING:
 				return
@@ -372,6 +376,7 @@ class GameManager:
 				return
 			
 			self.start_countdown()
+			print(f"使用者 {user.uid} 要求開始遊戲")
 		elif protocol == PROTOCOL_CLIENT.CANCEL_START:
 			if self.game_state != GAMESTATE.WAITING:
 				return
@@ -379,6 +384,7 @@ class GameManager:
 				return
 			
 			self.stop_countdown()
+			print(f"使用者 {user.uid} 取消開始遊戲倒數")
 		elif protocol == PROTOCOL_CLIENT.QUESTION:
 			if self.game_state != GAMESTATE.PREPARING:
 				return
@@ -396,6 +402,7 @@ class GameManager:
 				return
 			
 			next_player.question = word
+			print(f"使用者 {user.uid} 向 {next_player.user.uid} 出題：{word}")
 			self.broadcast_question(next_player)
 			
 			self.check_all_given_words()
@@ -418,6 +425,7 @@ class GameManager:
 			self.temp_guess = guess
 			self.votes.clear()
 			self.game_state = GAMESTATE.VOTING
+			print(f"使用者 {user.uid} 猜題：{guess}")
 			
 			self.broadcast_guess()
 		elif protocol == PROTOCOL_CLIENT.VOTE:
@@ -433,6 +441,7 @@ class GameManager:
 				return
 			
 			self.votes[user.uid] = vote
+			print(f"使用者 {user.uid} 進行投票：{vote}")
 			self.broadcast_vote(uid, vote)
 			self.check_all_votes()
 
