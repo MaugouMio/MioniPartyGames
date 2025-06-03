@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -52,7 +53,11 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private Text StartButtonText;
 
+	[SerializeField]
+	private Text StartCountdownText;
+
 	private bool needUpdate = true;
+	private IEnumerator countdownCoroutine = null;
 
 	void Awake()
 	{
@@ -225,6 +230,34 @@ public class GamePage : MonoBehaviour
 		else
 		{
 			StartButton.interactable = false;
+		}
+	}
+
+	private IEnumerator Countdown(int seconds)
+	{
+		while (seconds > 0)
+		{
+			StartCountdownText.text = $"遊戲開始倒數 {seconds} 秒";
+			yield return new WaitForSeconds(1f);
+			seconds--;
+		}
+		StartCountdownText.text = "";
+		countdownCoroutine = null;
+	}
+
+	public void StartCountdown(int seconds)
+	{
+		countdownCoroutine = Countdown(seconds);
+		StartCoroutine(countdownCoroutine);
+	}
+
+	public void StopCountdown()
+	{
+		if (countdownCoroutine != null)
+		{
+			StopCoroutine(countdownCoroutine);
+			StartCountdownText.text = "";
+			countdownCoroutine = null;
 		}
 	}
 

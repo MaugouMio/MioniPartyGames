@@ -563,11 +563,10 @@ class GameManager:
 
 	def remove_user(self, uid):
 		"""移除斷線的使用者"""
+		self.remove_player(uid)
 		if uid in self.users:
 			print(f"玩家 {self.users[uid].name} ({uid}) 已移除")
 			del self.users[uid]
-		
-		self.remove_player(uid)
 
 def main():
 	HOST = '127.0.0.1'

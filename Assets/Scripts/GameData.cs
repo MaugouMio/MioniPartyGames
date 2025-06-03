@@ -92,7 +92,9 @@ public class GameData
 	{
 		if (EventRecord.Count >= MAX_EVENT_RECORD)
 			EventRecord.Dequeue();
-		EventRecord.Enqueue(eventText);
+
+		string timeText = DateTime.Now.ToString("HH:mm:ss");
+		EventRecord.Enqueue($"[{timeText}] {eventText}");
 
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdateEventList();

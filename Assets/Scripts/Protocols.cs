@@ -284,12 +284,17 @@ public partial class NetManager
 		string name = reader.ReadString();
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
 			GameData.Instance.UserDatas[uid].Name = name;
+
+		if (GamePage.Instance != null && GameData.Instance.PlayerDatas.ContainsKey(uid))
+			GamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnPlayerJoin(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
 		GameData.Instance.PlayerDatas[uid] = new PlayerData { UID = uid };
+
+		GameData.Instance.AddEventRecord($"{GameData.Instance.UserDatas[uid].Name} 加入了遊戲");
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -304,6 +309,8 @@ public partial class NetManager
 		if (GameData.Instance.PlayerOrder.Contains(uid))
 			GameData.Instance.PlayerOrder.Remove(uid);
 
+		GameData.Instance.AddEventRecord($"{GameData.Instance.UserDatas[uid].Name} 離開了遊戲");
+
 		// 更新介面
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdatePlayerInfo();
@@ -315,38 +322,56 @@ public partial class NetManager
 		if (GameData.Instance.IsCountingDownStart)
 		{
 			byte countdownTime = reader.ReadByte();
-			// TODO: 播放倒數並把開始按鈕文字改成取消開始，同時加上事件訊息
+			if (GamePage.Instance != null)
+				GamePage.Instance.StartCountdown(countdownTime);
+			GameData.Instance.AddEventRecord($"遊戲將於 {countdownTime} 秒後開始");
 		}
 		else
 		{
-			// TODO:
-			// 關閉倒數並把開始按鈕文字改回去，同時加上事件訊息
+			if (GamePage.Instance != null)
+				GamePage.Instance.StopCountdown();
+			GameData.Instance.AddEventRecord($"已取消遊戲開始倒數");
 		}
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateStartButton();
 	}
 	private void OnGameStart(NetPacket packet)
 	{
 		GameData.Instance.ResetGame();
 		GameData.Instance.CurrentState = GameState.PREPARING;
+
+		// 更新介面
+		if (GamePage.Instance != null)
+		{
+			GamePage.Instance.StopCountdown();
+			GamePage.Instance.UpdateData();
+		}
 	}
 	private void OnGameStateChanged(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		GameData.Instance.CurrentState = (GameState)reader.ReadByte();
+
+		// 更新介面
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateData();
 	}
 	private void OnUpdatePlayerOrder(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		GameData.Instance.GuessingPlayerIndex = reader.ReadByte();
 		bool needUpdateOrder = reader.ReadByte() == 1;
-		if (!needUpdateOrder)
-			return;
-
-		GameData.Instance.PlayerOrder.Clear();
-		byte orderCount = reader.ReadByte();
-		for (int i = 0; i < orderCount; i++)
+		if (needUpdateOrder)
 		{
-			ushort uid = reader.ReadUInt16();
-			GameData.Instance.PlayerOrder.Add(uid);
+			GameData.Instance.PlayerOrder.Clear();
+			byte orderCount = reader.ReadByte();
+			for (int i = 0; i < orderCount; i++)
+			{
+				ushort uid = reader.ReadUInt16();
+				GameData.Instance.PlayerOrder.Add(uid);
+			}
 		}
 
 		// 更新介面
@@ -385,6 +410,8 @@ public partial class NetManager
 			PlayerData player = GameData.Instance.PlayerDatas[uid];
 			player.SuccessRound = successRound;
 		}
+		if (GameData.Instance.UserDatas.ContainsKey(uid))
+			GameData.Instance.AddEventRecord($"{GameData.Instance.UserDatas[uid].Name} 猜出了他的名詞");
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -396,6 +423,10 @@ public partial class NetManager
 		GameData.Instance.VotingGuess = reader.ReadString();
 		GameData.Instance.Votes.Clear();
 		GameData.Instance.CurrentState = GameState.VOTING;
+
+		ushort guessingPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+		if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
+			GameData.Instance.AddEventRecord($"{GameData.Instance.UserDatas[guessingPlayerUID].Name} 提問他的名詞是否為「{GameData.Instance.VotingGuess}」，開始進行表決");
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -414,7 +445,7 @@ public partial class NetManager
 	}
 	private void OnGuessAgainRequired(NetPacket packet)
 	{
-		// TODO: 新增事件紀錄
+		GameData.Instance.AddEventRecord("沒有人表示意見，要求重新提出猜測");
 	}
 	private void OnGuessRecordAdded(NetPacket packet)
 	{
@@ -427,14 +458,33 @@ public partial class NetManager
 			PlayerData player = GameData.Instance.PlayerDatas[uid];
 			player.AddGuessRecord(guess, result);
 		}
+
+		if (GameData.Instance.UserDatas.ContainsKey(uid))
+		{
+			string resultText = result == 1 ? "是" : "不是";
+			GameData.Instance.AddEventRecord($"投票結果：{GameData.Instance.UserDatas[uid].Name} 的名詞{resultText}「{guess}」");
+		}
+
+		// 更新介面
+		if (GamePage.Instance != null)
+		{
+			if (uid == GameData.Instance.SelfUID)
+				GamePage.Instance.UpdateSelfGuessRecord();
+			GamePage.Instance.UpdateCurrentPlayerGuessRecord();
+		}
 	}
 	private void OnGameEnd(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		bool isForceEnd = reader.ReadByte() == 1;
-		
+
 		GameData.Instance.CurrentState = GameState.WAITING;
-		// TODO: 顯示結算排名
+
+		GameData.Instance.AddEventRecord(isForceEnd ? "遊戲已被中斷" : "遊戲結束");
+		if (!isForceEnd)
+		{
+			// TODO: 顯示結算排名
+		}
 	}
 
 	// =========================================================
