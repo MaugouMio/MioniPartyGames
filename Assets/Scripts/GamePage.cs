@@ -266,6 +266,7 @@ public class GamePage : MonoBehaviour
 		}
 		else
 		{
+			StartButtonText.text = "遊戲進行中";
 			StartButton.interactable = false;
 		}
 	}
@@ -343,6 +344,10 @@ public class GamePage : MonoBehaviour
 	{
 		if (GameData.Instance.IsCountingDownStart)
 			NetManager.Instance.SendCancelStart();
+		else if (!GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID))
+			Popup.ShowMessage("須先加入遊戲才能進行操作");
+		else if (GameData.Instance.PlayerDatas.Count < 2)
+			Popup.ShowMessage("至少需要兩名玩家才能開始遊戲");
 		else
 			NetManager.Instance.SendStart();
 	}

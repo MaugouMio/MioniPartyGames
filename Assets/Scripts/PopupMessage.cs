@@ -13,6 +13,7 @@ public class PopupMessage : MonoBehaviour
 	private CanvasGroup canvasGroup;
 	private Text messageText;
 	private IEnumerator animCoroutine;
+	private Vector3 initPosition;
 
 	void Awake()
 	{
@@ -27,10 +28,14 @@ public class PopupMessage : MonoBehaviour
 			Debug.LogError($"PopupMessage requires a Text component as a child. ({gameObject.name})");
 	}
 
+	void Start()
+	{
+		initPosition = transform.localPosition;
+	}
+
 	private IEnumerator Display()
 	{
 		canvasGroup.alpha = 0f;
-		transform.localPosition = Vector3.zero;
 
 		// 淡入動畫
 		float currentTime = 0f;
@@ -39,10 +44,10 @@ public class PopupMessage : MonoBehaviour
 			currentTime += Time.deltaTime;
 			float rate = Mathf.Clamp01(currentTime / enterDuration);
 			canvasGroup.alpha = rate;
-			transform.localPosition = Vector3.up * floatHeight * rate;
+			transform.localPosition = initPosition + Vector3.down * floatHeight * (1f - rate);
 			yield return null;
 		}
-		transform.localPosition = Vector3.up * floatHeight;
+		transform.localPosition = initPosition;
 		canvasGroup.alpha = 1f;
 
 		// 停留時間
@@ -71,7 +76,8 @@ public class PopupMessage : MonoBehaviour
 
 		if (animCoroutine != null)
 			StopCoroutine(animCoroutine);
-		
+
+		messageText.text = message;
 		animCoroutine = Display();
 		StartCoroutine(animCoroutine);
 	}

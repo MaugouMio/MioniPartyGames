@@ -1685,7 +1685,7 @@ MonoBehaviour:
   GameResultWindow: {fileID: 1922015890}
   GameResultText: {fileID: 1770478059}
   StartCountdownText: {fileID: 593758928}
-  Popup: {fileID: 0}
+  Popup: {fileID: 621927011}
 --- !u!1 &518894369
 GameObject:
   m_ObjectHideFlags: 0
@@ -2669,10 +2669,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e1fe5e63d483be49b35fd1e5afbe294, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  floatHeight: 100
-  enterDuration: 0.3
-  stayDuration: 3
-  exitDuration: 0.3
+  floatHeight: 50
+  enterDuration: 0.1
+  stayDuration: 2
+  exitDuration: 0.2
 --- !u!1 &642757031
 GameObject:
   m_ObjectHideFlags: 0
