@@ -60,6 +60,8 @@ public class GamePage : MonoBehaviour
 
 	[SerializeField]
 	private Text StartCountdownText;
+	[SerializeField]
+	private PopupMessage Popup;
 
 	private bool needUpdate = true;
 	private IEnumerator countdownCoroutine = null;
@@ -326,12 +328,12 @@ public class GamePage : MonoBehaviour
 		byte[] encodedQuestion = System.Text.Encoding.UTF8.GetBytes(QuestionInput.text);
 		if (encodedQuestion.Length == 0)
 		{
-			// TODO: 提示問題不可為空
+			Popup.ShowMessage("問題內容不可為空");
 			return;
 		}
 		if (encodedQuestion.Length > 255)
 		{
-			// TODO: 提示問題過長
+			Popup.ShowMessage("問題內容過長");
 			return;
 		}
 
@@ -344,12 +346,12 @@ public class GamePage : MonoBehaviour
 		byte[] encodedGuess = System.Text.Encoding.UTF8.GetBytes(GuessInput.text);
 		if (encodedGuess.Length == 0)
 		{
-			// TODO: 提示猜測內容不可為空
+			Popup.ShowMessage("猜測的內容不可為空");
 			return;
 		}
 		if (encodedGuess.Length > 255)
 		{
-			// TODO: 提示猜測內容過長
+			Popup.ShowMessage("猜測的內容過長");
 			return;
 		}
 
