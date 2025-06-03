@@ -23,6 +23,9 @@ public class ConnectPage : MonoBehaviour
 	// Start is called once before the first execution of Update after the MonoBehaviour is created
 	void Start()
     {
+		IP_Input.text = PlayerPrefs.GetString("ServerIP", "");
+		NameInput.text = PlayerPrefs.GetString("PlayerName", "");
+
 		NetManager.Instance.OnConnected = OnConnected;
 		NetManager.Instance.OnDisconnected = OnDisconnected;
     }
@@ -83,6 +86,7 @@ public class ConnectPage : MonoBehaviour
 			return;
 		}
 
+		PlayerPrefs.SetString("ServerIP", IP_Input.text);
 		ConnectingMask.SetActive(true);
 	}
 
@@ -103,6 +107,7 @@ public class ConnectPage : MonoBehaviour
 			return;
 		}
 
+		PlayerPrefs.SetString("PlayerName", NameInput.text);
 		NetManager.Instance.SendName(encodedName);
 		SceneManager.LoadScene("GameScene");
 	}
