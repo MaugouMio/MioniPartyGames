@@ -314,7 +314,12 @@ public partial class NetManager
 
 		// 更新介面
 		if (GamePage.Instance != null)
-			GamePage.Instance.UpdatePlayerInfo();
+		{
+			if (GameData.Instance.CurrentState == GameState.WAITING)
+				GamePage.Instance.UpdatePlayerInfo();
+			else
+				GamePage.Instance.UpdateData();
+		}
 	}
 	private void OnStartCountdown(NetPacket packet)
 	{
