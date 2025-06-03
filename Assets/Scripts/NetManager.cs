@@ -18,6 +18,8 @@ public partial class NetManager : MonoBehaviour
 	private Thread m_ReadThread;
 	private Queue<NetPacket> m_PacketQueue;
 
+	private bool isDisconnected = false;
+
 	void Awake()
 	{
 		if (Resources.FindObjectsOfTypeAll<NetManager>().Length > 1)
@@ -43,6 +45,14 @@ public partial class NetManager : MonoBehaviour
 
 			ProcessReceive(packet);
 		}
+
+		Thread.MemoryBarrier();
+		if (isDisconnected)
+		{
+			Disconnect();
+			isDisconnected = false;
+		}
+		Thread.MemoryBarrier();
 	}
 
 	void OnDestroy()
@@ -177,6 +187,10 @@ public partial class NetManager : MonoBehaviour
 			catch (Exception e)
 			{
 				Debug.Log(e.ToString());
+
+				Thread.MemoryBarrier();
+				isDisconnected = true;
+				Thread.MemoryBarrier();
 			}
 		}
 	}
