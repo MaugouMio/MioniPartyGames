@@ -396,7 +396,12 @@ public partial class NetManager
 		ushort uid = reader.ReadUInt16();
 		if (uid == GameData.Instance.SelfUID)
 		{
-			// TODO: 提示自身題目已經出好了
+			// 提示自身題目已經出好了
+			if (GameData.Instance.PlayerDatas.ContainsKey(uid))
+			{
+				PlayerData player = GameData.Instance.PlayerDatas[uid];
+				player.Question = "<color=yellow>答案已屏蔽</color>";
+			}
 		}
 		else
 		{

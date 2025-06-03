@@ -15,13 +15,13 @@ public class UserData
 public class PlayerData
 {
 	public ushort UID { get; set; } = 0;
-	public string Question { get; set; } = "";
+	public string Question { get; set; } = "<i><color=#999999>等待其他玩家出題</color></i>";
 	public ushort SuccessRound { get; set; } = 0;
 	public List<string> GuessHistory { get; set; } = new List<string>();
 
 	public void Reset()
 	{
-		Question = "";
+		Question = "<i><color=#999999>等待其他玩家出題</color></i>";
 		SuccessRound = 0;
 		GuessHistory.Clear();
 	}
