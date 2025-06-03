@@ -5,6 +5,8 @@ using UnityEngine.UI;
 public class TextList : MonoBehaviour
 {
 	[SerializeField]
+	private ScrollRect scrollRect;
+	[SerializeField]
 	private List<Text> textList;
 
 	void Start()
@@ -40,5 +42,10 @@ public class TextList : MonoBehaviour
 		// 關閉多餘的 Text 元件
 		while (idx < textList.Count)
 			textList[idx++].gameObject.SetActive(false);
+	}
+
+	public void MoveToLast()
+	{
+		scrollRect.verticalNormalizedPosition = 0f;
 	}
 }

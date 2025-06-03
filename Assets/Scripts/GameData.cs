@@ -97,6 +97,6 @@ public class GameData
 		EventRecord.Enqueue($"[{timeText}] {eventText}");
 
 		if (GamePage.Instance != null)
-			GamePage.Instance.UpdateEventList();
+			GamePage.Instance.UpdateEventList(true);
 	}
 }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using UnityEngine;
 
 public enum PROTOCOL_CLIENT
 {
@@ -330,7 +331,7 @@ public partial class NetManager
 		{
 			if (GamePage.Instance != null)
 				GamePage.Instance.StopCountdown();
-			GameData.Instance.AddEventRecord($"已取消遊戲開始倒數");
+			GameData.Instance.AddEventRecord("已取消遊戲開始倒數");
 		}
 
 		// 更新介面
@@ -341,6 +342,8 @@ public partial class NetManager
 	{
 		GameData.Instance.ResetGame();
 		GameData.Instance.CurrentState = GameState.PREPARING;
+
+		GameData.Instance.AddEventRecord("遊戲開始");
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -353,6 +356,15 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		GameData.Instance.CurrentState = (GameState)reader.ReadByte();
+
+		if (GameData.Instance.CurrentState == GameState.GUESSING)
+		{
+			ushort guessingPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+			if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
+				GameData.Instance.AddEventRecord($"輪到 {GameData.Instance.UserDatas[guessingPlayerUID].Name} 進行猜題");
+			else
+				Debug.LogError($"猜題者 UID 為 {guessingPlayerUID} 的玩家不存在");
+		}
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -469,8 +481,8 @@ public partial class NetManager
 		if (GamePage.Instance != null)
 		{
 			if (uid == GameData.Instance.SelfUID)
-				GamePage.Instance.UpdateSelfGuessRecord();
-			GamePage.Instance.UpdateCurrentPlayerGuessRecord();
+				GamePage.Instance.UpdateSelfGuessRecord(true);
+			GamePage.Instance.UpdateCurrentPlayerGuessRecord(true);
 		}
 	}
 	private void OnGameEnd(NetPacket packet)

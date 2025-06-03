@@ -1306,6 +1306,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02f1a5d02a7d59447b004df7ddd41ea8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  scrollRect: {fileID: 1239804059}
   textList:
   - {fileID: 735649513}
 --- !u!1 &461728320
@@ -5749,6 +5750,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02f1a5d02a7d59447b004df7ddd41ea8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  scrollRect: {fileID: 1971162828}
   textList:
   - {fileID: 1119032475}
 --- !u!1 &1590345489
@@ -5930,6 +5932,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02f1a5d02a7d59447b004df7ddd41ea8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  scrollRect: {fileID: 258544230}
   textList:
   - {fileID: 852007953}
 --- !u!114 &1636731742

@@ -192,12 +192,14 @@ public class GamePage : MonoBehaviour
 		}
 	}
 
-	public void UpdateEventList()
+	public void UpdateEventList(bool isNewRecord = false)
 	{
 		EventList.UpdateData(GameData.Instance.EventRecord);
+		if (isNewRecord)
+			EventList.MoveToLast();
 	}
 
-	public void UpdateSelfGuessRecord()
+	public void UpdateSelfGuessRecord(bool isNewRecord = false)
 	{
 		if (!GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData player))
 		{
@@ -206,9 +208,11 @@ public class GamePage : MonoBehaviour
 		}
 
 		GuessRecord.UpdateData(player.GuessHistory);
+		if (isNewRecord)
+			GuessRecord.MoveToLast();
 	}
 
-	public void UpdateCurrentPlayerGuessRecord()
+	public void UpdateCurrentPlayerGuessRecord(bool isNewRecord = false)
 	{
 		ushort uid = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
 		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
@@ -218,6 +222,8 @@ public class GamePage : MonoBehaviour
 		}
 
 		CurrentPlayerGuessRecord.UpdateData(player.GuessHistory);
+		if (isNewRecord)
+			CurrentPlayerGuessRecord.MoveToLast();
 	}
 
 	public void UpdateStartButton()
