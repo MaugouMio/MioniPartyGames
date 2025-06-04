@@ -421,7 +421,7 @@ class GameManager:
 			
 			player = self.players[user.uid]
 			guess = message.decode('utf8').strip()
-			if guess == player.question:
+			if guess.lower() == player.question.lower():
 				player.success_round = self.current_round
 				self.broadcast_success(user.uid, self.current_round, guess)
 				self.advance_to_next_player()
