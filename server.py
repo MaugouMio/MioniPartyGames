@@ -470,6 +470,8 @@ class GameManager:
 		"""開始遊戲，設定玩家順序並要求出題。"""
 		self.thread_lock.acquire()
 		
+		self.countdown_timer = None
+		
 		self.reset_game()
 		self.current_round = 1
 		self.game_state = GAMESTATE.PREPARING
