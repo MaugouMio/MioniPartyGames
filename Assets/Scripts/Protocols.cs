@@ -296,7 +296,7 @@ public partial class NetManager
 		ushort uid = reader.ReadUInt16();
 		GameData.Instance.PlayerDatas[uid] = new PlayerData { UID = uid };
 
-		GameData.Instance.AddEventRecord($"{GameData.Instance.UserDatas[uid].Name} 加入了遊戲");
+		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 加入了遊戲");
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -311,7 +311,7 @@ public partial class NetManager
 		if (GameData.Instance.PlayerOrder.Contains(uid))
 			GameData.Instance.PlayerOrder.Remove(uid);
 
-		GameData.Instance.AddEventRecord($"{GameData.Instance.UserDatas[uid].Name} 離開了遊戲");
+		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 離開了遊戲");
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -367,7 +367,7 @@ public partial class NetManager
 		{
 			ushort guessingPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
 			if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
-				GameData.Instance.AddEventRecord($"輪到 {GameData.Instance.UserDatas[guessingPlayerUID].Name} 進行猜題");
+				GameData.Instance.AddEventRecord($"輪到 <color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 進行猜題");
 			else
 				Debug.LogError($"猜題者 UID 為 {guessingPlayerUID} 的玩家不存在");
 		}
@@ -428,13 +428,15 @@ public partial class NetManager
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
 		ushort successRound = reader.ReadUInt16();
+		string answer = reader.ReadString();
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 		{
 			PlayerData player = GameData.Instance.PlayerDatas[uid];
 			player.SuccessRound = successRound;
+			player.Question = $"<color=yellow>{answer}</color>"; // 更新玩家的名詞為答案
 		}
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
-			GameData.Instance.AddEventRecord($"{GameData.Instance.UserDatas[uid].Name} 猜出了他的名詞");
+			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 猜出了他的名詞");
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -449,7 +451,7 @@ public partial class NetManager
 
 		ushort guessingPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
 		if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
-			GameData.Instance.AddEventRecord($"{GameData.Instance.UserDatas[guessingPlayerUID].Name} 提問他的名詞是否為「{GameData.Instance.VotingGuess}」，開始進行表決");
+			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 提問他的名詞是否為 <color=blue>{GameData.Instance.VotingGuess}</color>");
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -484,8 +486,8 @@ public partial class NetManager
 
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
 		{
-			string resultText = result == 1 ? "是" : "不是";
-			GameData.Instance.AddEventRecord($"投票結果：{GameData.Instance.UserDatas[uid].Name} 的名詞{resultText}「{guess}」");
+			string resultText = result == 1 ? "<color=green>是</color>" : "<color=red>不是</color>";
+			GameData.Instance.AddEventRecord($"投票結果：<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 的名詞 {resultText} <color=blue>{guess}</color>");
 		}
 
 		// 更新介面

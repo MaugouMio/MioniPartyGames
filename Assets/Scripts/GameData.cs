@@ -1,10 +1,5 @@
-﻿using UnityEngine;
-using System;
-using System.Net.Sockets;
-using System.Threading;
+﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.IO;
 
 public class UserData
 {
@@ -15,13 +10,13 @@ public class UserData
 public class PlayerData
 {
 	public ushort UID { get; set; } = 0;
-	public string Question { get; set; } = "<i><color=#999999>等待其他玩家出題</color></i>";
+	public string Question { get; set; } = "";
 	public ushort SuccessRound { get; set; } = 0;
 	public List<string> GuessHistory { get; set; } = new List<string>();
 
 	public void Reset()
 	{
-		Question = "<i><color=#999999>等待其他玩家出題</color></i>";
+		Question = "";
 		SuccessRound = 0;
 		GuessHistory.Clear();
 	}
@@ -74,16 +69,16 @@ public class GameData
 		SelfUID = 0;
 		UserDatas.Clear();
 		PlayerDatas.Clear();
+		EventRecord.Clear();
+		PlayerOrder.Clear();
+		GuessingPlayerIndex = 0;
+		VotingGuess = "";
+		Votes.Clear();
 		ResetGame();
 	}
 	public void ResetGame()
 	{
 		IsCountingDownStart = false;
-		CurrentState = GameState.WAITING;
-		PlayerOrder.Clear();
-		GuessingPlayerIndex = 0;
-		VotingGuess = "";
-		Votes.Clear();
 		foreach (var player in PlayerDatas.Values)
 			player.Reset();
 	}

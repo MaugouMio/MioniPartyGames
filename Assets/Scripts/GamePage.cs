@@ -78,14 +78,14 @@ public class GamePage : MonoBehaviour
 		if (needUpdate)
 			UpdateDataReal();
 
-		// if (Input.GetKeyDown(KeyCode.Return))
-		// {
-			// if (NameWindow.activeSelf)
-				// ClickSetName();
-			// else
-				// ClickConnect();
-		// }
-    }
+		if (Input.GetKeyDown(KeyCode.Return))
+		{
+			if (GameData.Instance.CurrentState == GameState.PREPARING)
+				ClickAssignQuestion();
+			else if (GuessInput.gameObject.activeInHierarchy)
+				ClickConfirmGuess();
+		}
+	}
 
 	void OnDestroy()
 	{
@@ -244,7 +244,7 @@ public class GamePage : MonoBehaviour
 	{
 		if (GameData.Instance.CurrentState == GameState.WAITING)
 			return;
-
+		
 		ushort uid = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
 		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 		{
@@ -266,7 +266,7 @@ public class GamePage : MonoBehaviour
 		}
 		else
 		{
-			StartButtonText.text = "遊戲進行中";
+			StartButtonText.text = "遊戲中";
 			StartButton.interactable = false;
 		}
 	}

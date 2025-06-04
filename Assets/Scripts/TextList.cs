@@ -9,12 +9,23 @@ public class TextList : MonoBehaviour
 	[SerializeField]
 	private List<Text> textList;
 
+	private int moveToLastTick = 0;
+
 	void Start()
 	{
 		if (textList.Count == 0)
 			Debug.LogError($"TextList component is empty for object {gameObject.name}");
 		else
 			textList[0].gameObject.SetActive(false); // 初始時隱藏第一個 Text 元件
+	}
+
+	void Update()
+	{
+		if (moveToLastTick > 0)
+		{
+			if (--moveToLastTick == 0)
+				scrollRect.verticalNormalizedPosition = 0f; // 滾動到最底部
+		}
 	}
 
 	public void UpdateData(IEnumerable<string> stringList)
@@ -28,6 +39,7 @@ public class TextList : MonoBehaviour
 				if (idx >= textList.Count)
 				{
 					obj = Instantiate(textList[0], transform);
+					obj.transform.SetParent(textList[0].transform.parent, false);
 					textList.Add(obj);
 				}
 				else
@@ -37,6 +49,8 @@ public class TextList : MonoBehaviour
 
 				obj.gameObject.SetActive(true);
 				obj.text = str;
+				LayoutRebuilder.ForceRebuildLayoutImmediate(obj.rectTransform);
+
 				idx++;
 			}
 		}
@@ -48,6 +62,7 @@ public class TextList : MonoBehaviour
 
 	public void MoveToLast()
 	{
-		scrollRect.verticalNormalizedPosition = 0f;
+		moveToLastTick = 2;
+		//scrollRect.verticalNormalizedPosition = 0f;
 	}
 }

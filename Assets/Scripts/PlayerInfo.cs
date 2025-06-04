@@ -21,7 +21,7 @@ public class PlayerInfo : MonoBehaviour
 
 		UserData userData = GameData.Instance.UserDatas[playerData.UID];
 		nameText.text = userData.Name;
-		questionText.text = playerData.Question;
+		questionText.text = playerData.Question == "" ? "<i><color=#999999>等待其他玩家出題</color></i>" : playerData.Question;
 
 		if (GameData.Instance.CurrentState == GameState.WAITING)
 		{

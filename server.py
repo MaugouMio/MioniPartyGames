@@ -97,7 +97,8 @@ class GameManager:
 
 	def broadcast(self, packet, exclude_client=None):
 		"""廣播訊息給所有已連線的客戶端。"""
-		for uid, user in self.users.items():
+		user_list = list(self.users.items())
+		for uid, user in user_list:
 			if uid != exclude_client:
 				try:
 					user.socket.sendall(packet)
@@ -122,7 +123,7 @@ class GameManager:
 			data += len(encoded_question).to_bytes(1, byteorder='little')
 			data += encoded_question
 			data += len(player.guess_history).to_bytes(1, byteorder='little')
-			for guess in players.guess_history:
+			for guess in player.guess_history:
 				encoded_guess = guess[0].encode('utf8')
 				data += len(encoded_guess).to_bytes(1, byteorder='little')
 				data += encoded_guess
@@ -214,32 +215,36 @@ class GameManager:
 		else:
 			data += int(0).to_bytes(1, byteorder='little')
 		
-		packet = self.new_packet(PROTOCOL_SERVER.GAMESTATE, data)
+		packet = self.new_packet(PROTOCOL_SERVER.PLAYER_ORDER, data)
 		self.broadcast(packet)
 	
 	def broadcast_question(self, player):
 		data = bytes()
-		data += player.uid.to_bytes(2, byteorder='little')
+		data += player.user.uid.to_bytes(2, byteorder='little')
 		encoded_question = player.question.encode('utf8')
 		data += len(encoded_question).to_bytes(1, byteorder='little')
 		data += encoded_question
 		
 		packet = self.new_packet(PROTOCOL_SERVER.QUESTION, data)
-		self.broadcast(packet, exclude_client=player.uid)
+		self.broadcast(packet, exclude_client=player.user.uid)
 		
 		# 傳給玩家本身的資訊不含題目，只做提示已經出好題了
 		data = bytes()
-		data += player.uid.to_bytes(2, byteorder='little')
+		data += player.user.uid.to_bytes(2, byteorder='little')
 		packet = self.new_packet(PROTOCOL_SERVER.QUESTION, data)
 		try:
 			player.user.socket.sendall(packet)
 		except:
 			pass
 	
-	def broadcast_success(self, uid, success_round):
+	def broadcast_success(self, uid, success_round, answer):
 		data = bytes()
 		data += uid.to_bytes(2, byteorder='little')
 		data += success_round.to_bytes(2, byteorder='little')
+		
+		encoded_answer = answer.encode('utf8')
+		data += len(encoded_answer).to_bytes(1, byteorder='little')
+		data += encoded_answer
 		
 		packet = self.new_packet(PROTOCOL_SERVER.SUCCESS, data)
 		self.broadcast(packet)
@@ -247,7 +252,7 @@ class GameManager:
 	def broadcast_guess(self):
 		data = bytes()
 		encoded_guess = self.temp_guess.encode('utf8')
-		data += len(encoded_guess).to_bytes(2, byteorder='little')
+		data += len(encoded_guess).to_bytes(1, byteorder='little')
 		data += encoded_guess
 		
 		packet = self.new_packet(PROTOCOL_SERVER.GUESS, data)
@@ -394,11 +399,11 @@ class GameManager:
 				return
 			
 			next_player = self.players[self.player_order[(self.player_order.index(user.uid) + 1) % len(self.player_order)]]
-			if next_player.question != "":
-				return
+			# if next_player.question != "":
+				# return
 			
 			word = message.decode('utf8').strip()
-			if word == "":
+			if word == "" or word == next_player.question:
 				return
 			
 			next_player.question = word
@@ -418,7 +423,7 @@ class GameManager:
 			guess = message.decode('utf8').strip()
 			if guess == player.question:
 				player.success_round = self.current_round
-				self.broadcast_success(user.uid, self.current_round)
+				self.broadcast_success(user.uid, self.current_round, guess)
 				self.advance_to_next_player()
 				return
 			
@@ -442,7 +447,7 @@ class GameManager:
 			
 			self.votes[user.uid] = vote
 			print(f"使用者 {user.uid} 進行投票：{vote}")
-			self.broadcast_vote(uid, vote)
+			self.broadcast_vote(user.uid, vote)
 			self.check_all_votes()
 
 	def start_countdown(self):
@@ -462,19 +467,16 @@ class GameManager:
 		self.broadcast_start_countdown(is_stop=True)
 
 	def start_game(self):
-		self.thread_lock.acquire()
-		
 		"""開始遊戲，設定玩家順序並要求出題。"""
-		self.player_order = list(self.players.keys())
-		random.shuffle(self.player_order)
-		self.current_guessing_idx = 0
-		
-		for uid, player in self.players.items():
-			player.reset()
+		self.thread_lock.acquire()
 		
 		self.reset_game()
 		self.current_round = 1
 		self.game_state = GAMESTATE.PREPARING
+		
+		self.player_order = list(self.players.keys())
+		random.shuffle(self.player_order)
+		self.current_guessing_idx = 0
 		
 		self.broadcast_player_order(include_list=True)
 		self.broadcast_start()
