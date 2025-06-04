@@ -12,6 +12,7 @@ public enum PROTOCOL_CLIENT
 	QUESTION,
 	GUESS,
 	VOTE,
+	CHAT,
 }
 
 public enum PROTOCOL_SERVER
@@ -33,6 +34,7 @@ public enum PROTOCOL_SERVER
 	GUESS_AGAIN,
 	GUESS_RECORD,
 	END,
+	CHAT,
 }
 
 public class NetPacket
@@ -206,6 +208,9 @@ public partial class NetManager
 				break;
 			case PROTOCOL_SERVER.END:
 				OnGameEnd(packet);
+				break;
+			case PROTOCOL_SERVER.CHAT:
+				OnChatMessage(packet);
 				break;
 		}
 	}
@@ -534,6 +539,15 @@ public partial class NetManager
 		}
 	}
 
+	private void OnChatMessage(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		ushort uid = reader.ReadUInt16();
+		string message = reader.ReadString();
+		if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
+			GameData.Instance.AddEventRecord($"[<color=yellow>{user.Name}</color>] {message}", false);
+	}
+
 	// =========================================================
 
 	public void SendName(byte[] encodedName)
@@ -575,6 +589,12 @@ public partial class NetManager
 	{
 		byte[] data = new byte[1] { vote };
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VOTE, 1, data);
+		SendPacket(packet);
+	}
+
+	public void SendChatMessage(byte[] encodedMessage)
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CHAT, encodedMessage.Length, encodedMessage);
 		SendPacket(packet);
 	}
 }

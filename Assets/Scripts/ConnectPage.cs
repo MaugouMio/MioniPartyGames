@@ -30,18 +30,6 @@ public class ConnectPage : MonoBehaviour
 		NetManager.Instance.OnDisconnected = OnDisconnected;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-		if (Input.GetKeyDown(KeyCode.Return))
-		{
-			if (NameWindow.activeSelf)
-				ClickSetName();
-			else
-				ClickConnect();
-		}
-    }
-
 	void OnDestroy()
 	{
 		NetManager.Instance.OnConnected = null;

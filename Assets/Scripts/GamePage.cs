@@ -45,6 +45,8 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private TextList EventList;
 	[SerializeField]
+	private InputField ChatInput;
+	[SerializeField]
 	private TextList GuessRecord;
 	[SerializeField]
 	private TextList CurrentPlayerGuessRecord;
@@ -77,14 +79,6 @@ public class GamePage : MonoBehaviour
     {
 		if (needUpdate)
 			UpdateDataReal();
-
-		if (Input.GetKeyDown(KeyCode.Return))
-		{
-			if (GameData.Instance.CurrentState == GameState.PREPARING)
-				ClickAssignQuestion();
-			else if (GuessInput.gameObject.activeInHierarchy)
-				ClickConfirmGuess();
-		}
 	}
 
 	void OnDestroy()
@@ -409,5 +403,23 @@ public class GamePage : MonoBehaviour
 	public void ClickCloseResult()
 	{
 		GameResultWindow.SetActive(false);
+	}
+
+	public void ClickSendChat()
+	{
+		string processedMessage = ChatInput.text.Trim();
+		if (processedMessage == "")
+			return;
+
+		byte[] encodedMessage = System.Text.Encoding.UTF8.GetBytes(processedMessage);
+		if (encodedMessage.Length > 255)
+		{
+			ShowPopupMessage("訊息內容過長");
+			return;
+		}
+
+		NetManager.Instance.SendChatMessage(encodedMessage);
+		ChatInput.text = "";
+		ChatInput.ActivateInputField();
 	}
 }

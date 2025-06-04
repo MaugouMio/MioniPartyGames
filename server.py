@@ -25,6 +25,7 @@ class PROTOCOL_CLIENT:
 	QUESTION		= 5
 	GUESS			= 6
 	VOTE			= 7
+	CHAT			= 8
 
 class PROTOCOL_SERVER:
 	INIT			= 0
@@ -44,6 +45,7 @@ class PROTOCOL_SERVER:
 	GUESS_AGAIN		= 14
 	GUESS_RECORD	= 15
 	END				= 16
+	CHAT			= 17
 
 class GAMESTATE:
 	WAITING			= 0  # 可以加入遊戲的階段
@@ -288,6 +290,16 @@ class GameManager:
 		packet = self.new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder='little'))
 		self.broadcast(packet)
 	
+	def broadcast_chat(self, uid, encoded_message):
+		data = bytes()
+		data += uid.to_bytes(2, byteorder='little')
+		
+		data += len(encoded_message).to_bytes(1, byteorder='little')
+		data += encoded_message
+		
+		packet = self.new_packet(PROTOCOL_SERVER.CHAT, data)
+		self.broadcast(packet)
+	
 	def handle_client(self, conn, addr):
 		"""處理單一客戶端的連線。"""
 		self.thread_lock.acquire()
@@ -449,6 +461,8 @@ class GameManager:
 			print(f"使用者 {user.uid} 進行投票：{vote}")
 			self.broadcast_vote(user.uid, vote)
 			self.check_all_votes()
+		elif protocol == PROTOCOL_CLIENT.CHAT:
+			self.broadcast_chat(user.uid, message)
 
 	def start_countdown(self):
 		if self.countdown_timer:

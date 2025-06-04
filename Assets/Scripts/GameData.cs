@@ -83,13 +83,20 @@ public class GameData
 			player.Reset();
 	}
 
-	public void AddEventRecord(string eventText)
+	public void AddEventRecord(string eventText, bool showTime = true)
 	{
 		if (EventRecord.Count >= MAX_EVENT_RECORD)
 			EventRecord.Dequeue();
 
-		string timeText = DateTime.Now.ToString("HH:mm:ss");
-		EventRecord.Enqueue($"[{timeText}] {eventText}");
+		if (showTime)
+		{
+			string timeText = DateTime.Now.ToString("HH:mm:ss");
+			EventRecord.Enqueue($"[{timeText}] {eventText}");
+		}
+		else
+		{
+			EventRecord.Enqueue(eventText);
+		}
 
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdateEventList(true);
