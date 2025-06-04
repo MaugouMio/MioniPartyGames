@@ -544,8 +544,14 @@ public partial class NetManager
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
 		string message = reader.ReadString();
+
 		if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
-			GameData.Instance.AddEventRecord($"[<color=yellow>{user.Name}</color>] {message}", false);
+		{
+			string fullMessage = $"[<color=yellow>{user.Name}</color>] {message}";
+			GameData.Instance.AddEventRecord(fullMessage, false);
+			if (GamePage.Instance != null)
+				GamePage.Instance.ShowPopupMessage(fullMessage);
+		}
 	}
 
 	// =========================================================
