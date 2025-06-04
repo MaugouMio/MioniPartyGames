@@ -42,13 +42,13 @@ public class PlayerInfo : MonoBehaviour
 		{
 			switch (vote)
 			{
-				case 0:
+				case 1:
 					voteText.text = "<color=#00ba00>✔</color>";
 					break;
-				case 1:
+				case 2:
 					voteText.text = "<color=#ba0000>✘</color>";
 					break;
-				case 2:
+				case 0:
 					voteText.text = "<color=#baba00>∆</color>";
 					break;
 			}
