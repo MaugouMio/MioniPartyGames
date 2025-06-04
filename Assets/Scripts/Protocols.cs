@@ -464,6 +464,16 @@ public partial class NetManager
 		byte vote = reader.ReadByte();
 		GameData.Instance.Votes[uid] = vote;
 
+		string voteText = vote switch
+		{
+			1 => "<color=#00ba00>同意</color>",
+			2 => "<color=#ba0000>否定</color>",
+			0 => "<color=#baba00>棄權</color>",
+			_ => ""
+		};
+		if (GameData.Instance.UserDatas.ContainsKey(uid))
+			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 表示 {voteText}");
+
 		// 更新介面
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdatePlayerInfo();
@@ -486,7 +496,7 @@ public partial class NetManager
 
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
 		{
-			string resultText = result == 1 ? "<color=green>是</color>" : "<color=red>不是</color>";
+			string resultText = result == 1 ? "<color=#00ba00>是</color>" : "<color=#ba0000>不是</color>";
 			GameData.Instance.AddEventRecord($"投票結果：<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 的名詞 {resultText} <color=blue>{guess}</color>");
 		}
 
