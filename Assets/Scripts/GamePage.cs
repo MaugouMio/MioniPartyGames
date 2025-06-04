@@ -302,6 +302,14 @@ public class GamePage : MonoBehaviour
 		}
 	}
 
+	public void ShowPopupMessage(string message)
+	{
+		if (Popup != null)
+			Popup.ShowMessage(message);
+		else
+			Debug.LogWarning("PopupMessage is not assigned.");
+	}
+
 	public void ShowGameResult()
 	{
 		List<Tuple<ushort, ushort>> resultList = new List<Tuple<ushort, ushort>>();
@@ -345,9 +353,9 @@ public class GamePage : MonoBehaviour
 		if (GameData.Instance.IsCountingDownStart)
 			NetManager.Instance.SendCancelStart();
 		else if (!GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID))
-			Popup.ShowMessage("須先加入遊戲才能進行操作");
+			ShowPopupMessage("須先加入遊戲才能進行操作");
 		else if (GameData.Instance.PlayerDatas.Count < 2)
-			Popup.ShowMessage("至少需要兩名玩家才能開始遊戲");
+			ShowPopupMessage("至少需要兩名玩家才能開始遊戲");
 		else
 			NetManager.Instance.SendStart();
 	}
@@ -357,12 +365,12 @@ public class GamePage : MonoBehaviour
 		byte[] encodedQuestion = System.Text.Encoding.UTF8.GetBytes(QuestionInput.text);
 		if (encodedQuestion.Length == 0)
 		{
-			Popup.ShowMessage("問題內容不可為空");
+			ShowPopupMessage("問題內容不可為空");
 			return;
 		}
 		if (encodedQuestion.Length > 255)
 		{
-			Popup.ShowMessage("問題內容過長");
+			ShowPopupMessage("問題內容過長");
 			return;
 		}
 
@@ -375,12 +383,12 @@ public class GamePage : MonoBehaviour
 		byte[] encodedGuess = System.Text.Encoding.UTF8.GetBytes(GuessInput.text);
 		if (encodedGuess.Length == 0)
 		{
-			Popup.ShowMessage("猜測的內容不可為空");
+			ShowPopupMessage("猜測的內容不可為空");
 			return;
 		}
 		if (encodedGuess.Length > 255)
 		{
-			Popup.ShowMessage("猜測的內容過長");
+			ShowPopupMessage("猜測的內容過長");
 			return;
 		}
 

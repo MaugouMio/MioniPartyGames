@@ -421,7 +421,11 @@ public partial class NetManager
 
 		// 更新介面
 		if (GamePage.Instance != null)
+		{
 			GamePage.Instance.UpdatePlayerInfo();
+			if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
+				GamePage.Instance.ShowPopupMessage($"<color=yellow>{user.Name}</color> 的題目已指派");
+		}
 	}
 	private void OnPlayerSuccess(NetPacket packet)
 	{
@@ -435,12 +439,17 @@ public partial class NetManager
 			player.SuccessRound = successRound;
 			player.Question = $"<color=yellow>{answer}</color>"; // 更新玩家的名詞為答案
 		}
+
+		string successMessage = $"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 猜出了他的名詞";
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
-			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 猜出了他的名詞");
+			GameData.Instance.AddEventRecord(successMessage);
 
 		// 更新介面
 		if (GamePage.Instance != null)
+		{
 			GamePage.Instance.UpdateData();
+			GamePage.Instance.ShowPopupMessage(successMessage);
+		}
 	}
 	private void OnPlayerGuessed(NetPacket packet)
 	{
