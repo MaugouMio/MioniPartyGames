@@ -65,6 +65,9 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private PopupMessage Popup;
 
+	[SerializeField]
+	private AudioSource SFXPlayer;
+
 	private bool needUpdate = true;
 	private IEnumerator countdownCoroutine = null;
 
@@ -270,6 +273,7 @@ public class GamePage : MonoBehaviour
 		while (seconds > 0)
 		{
 			StartCountdownText.text = $"遊戲開始倒數 {seconds} 秒";
+			PlaySound("clock");
 			yield return new WaitForSeconds(1f);
 			seconds--;
 		}
@@ -302,6 +306,22 @@ public class GamePage : MonoBehaviour
 			Popup.ShowMessage(message);
 		else
 			Debug.LogWarning("PopupMessage is not assigned.");
+	}
+
+	public void PlaySound(string name)
+	{
+		if (SFXPlayer != null)
+		{
+			AudioClip clip = Resources.Load<AudioClip>($"Sounds/{name}");
+			if (clip != null)
+				SFXPlayer.PlayOneShot(clip);
+			else
+				Debug.LogWarning($"Audio clip '{name}' not found.");
+		}
+		else
+		{
+			Debug.LogWarning("SFXPlayer is not assigned.");
+		}
 	}
 
 	public void ShowGameResult()

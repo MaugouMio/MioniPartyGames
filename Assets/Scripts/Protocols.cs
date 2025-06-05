@@ -305,7 +305,10 @@ public partial class NetManager
 
 		// 更新介面
 		if (GamePage.Instance != null)
+		{
 			GamePage.Instance.UpdatePlayerInfo();
+			GamePage.Instance.PlaySound("pop_up");
+		}
 	}
 	private void OnPlayerLeave(NetPacket packet)
 	{
@@ -325,6 +328,8 @@ public partial class NetManager
 				GamePage.Instance.UpdatePlayerInfo();
 			else
 				GamePage.Instance.UpdateData();
+
+			GamePage.Instance.PlaySound("pop_off");
 		}
 	}
 	private void OnStartCountdown(NetPacket packet)
@@ -361,10 +366,14 @@ public partial class NetManager
 		{
 			GamePage.Instance.StopCountdown();
 			GamePage.Instance.UpdateData();
+
+			GamePage.Instance.PlaySound("ding");
 		}
 	}
 	private void OnGameStateChanged(NetPacket packet)
 	{
+		GameState originState = GameData.Instance.CurrentState;
+
 		ByteReader reader = new ByteReader(packet.data);
 		GameData.Instance.CurrentState = (GameState)reader.ReadByte();
 
@@ -379,7 +388,12 @@ public partial class NetManager
 
 		// 更新介面
 		if (GamePage.Instance != null)
+		{
 			GamePage.Instance.UpdateData();
+
+			if (originState == GameState.PREPARING && GameData.Instance.CurrentState == GameState.GUESSING)
+				GamePage.Instance.PlaySound("ding");
+		}
 	}
 	private void OnUpdatePlayerOrder(NetPacket packet)
 	{
@@ -454,6 +468,19 @@ public partial class NetManager
 		{
 			GamePage.Instance.UpdateData();
 			GamePage.Instance.ShowPopupMessage(successMessage);
+
+			bool isEnding = true;
+			foreach (PlayerData player in GameData.Instance.PlayerDatas.Values)
+			{
+				if (player.SuccessRound == 0)
+				{
+					isEnding = false;
+					break;
+				}
+			}
+			// 要結束遊戲不播音效
+			if (!isEnding)
+				GamePage.Instance.PlaySound("boom");
 		}
 	}
 	private void OnPlayerGuessed(NetPacket packet)
@@ -469,7 +496,10 @@ public partial class NetManager
 
 		// 更新介面
 		if (GamePage.Instance != null)
+		{
 			GamePage.Instance.UpdateData();
+			GamePage.Instance.PlaySound("drum");
+		}
 	}
 	private void OnPlayerVoted(NetPacket packet)
 	{
@@ -495,6 +525,8 @@ public partial class NetManager
 	private void OnGuessAgainRequired(NetPacket packet)
 	{
 		GameData.Instance.AddEventRecord("沒有人表示意見，要求重新提出猜測");
+		if (GamePage.Instance != null)
+			GamePage.Instance.PlaySound("huh");
 	}
 	private void OnGuessRecordAdded(NetPacket packet)
 	{
@@ -508,10 +540,12 @@ public partial class NetManager
 			player.AddGuessRecord(guess, result);
 		}
 
+		string messageText = null;
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
 		{
 			string resultText = result == 1 ? "<color=#00ba00>是</color>" : "<color=#ba0000>不是</color>";
-			GameData.Instance.AddEventRecord($"投票結果：<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 的名詞 {resultText} <color=blue>{guess}</color>");
+			messageText = $"投票結果：<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 的名詞 {resultText} <color=blue>{guess}</color>";
+			GameData.Instance.AddEventRecord(messageText);
 		}
 
 		// 更新介面
@@ -520,6 +554,14 @@ public partial class NetManager
 			if (uid == GameData.Instance.SelfUID)
 				GamePage.Instance.UpdateSelfGuessRecord(true);
 			GamePage.Instance.UpdateCurrentPlayerGuessRecord(true);
+
+			if (messageText != null)
+				GamePage.Instance.ShowPopupMessage(messageText);
+
+			if (result == 1)
+				GamePage.Instance.PlaySound("nice");
+			else
+				GamePage.Instance.PlaySound("bruh");
 		}
 	}
 	private void OnGameEnd(NetPacket packet)
@@ -536,6 +578,8 @@ public partial class NetManager
 			GamePage.Instance.UpdateData();
 			if (!isForceEnd)
 				GamePage.Instance.ShowGameResult();
+
+			GamePage.Instance.PlaySound("end");
 		}
 	}
 

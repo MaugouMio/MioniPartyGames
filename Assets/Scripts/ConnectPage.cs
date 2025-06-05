@@ -38,7 +38,7 @@ public class ConnectPage : MonoBehaviour
 
 	private void OnConnected()
 	{
-		ConnectingMask.SetActive(false);
+		//ConnectingMask.SetActive(false);
 		NameWindow.SetActive(true);
 	}
 
