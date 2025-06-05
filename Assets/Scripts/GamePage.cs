@@ -41,6 +41,10 @@ public class GamePage : MonoBehaviour
 	private GameObject GuessConfirmButtons;
 	[SerializeField]
 	private GameObject VoteButtons;
+	[SerializeField]
+	private Slider VolumeSlider;
+	[SerializeField]
+	private Text VolumeText;
 
 	[SerializeField]
 	private TextList EventList;
@@ -77,6 +81,8 @@ public class GamePage : MonoBehaviour
 	{
 		Instance = this;
 		GameResultWindow.SetActive(false);
+		VolumeSlider.value = PlayerPrefs.GetFloat("SoundVolume", 0.5f);
+		VolumeText.text = ((int)(VolumeSlider.value * 100)).ToString();
 	}
 
     // Update is called once per frame
@@ -89,6 +95,7 @@ public class GamePage : MonoBehaviour
 	void OnDestroy()
 	{
 		Instance = null;
+		PlayerPrefs.SetFloat("SoundVolume", VolumeSlider.value);
 	}
 
 	private void UpdateDataReal()
@@ -451,5 +458,18 @@ public class GamePage : MonoBehaviour
 		NetManager.Instance.SendChatMessage(encodedMessage);
 		ChatInput.text = "";
 		ChatInput.ActivateInputField();
+	}
+
+	public void OnVolumeChanged()
+	{
+		if (SFXPlayer != null)
+		{
+			SFXPlayer.volume = VolumeSlider.value;
+			VolumeText.text = ((int)(VolumeSlider.value * 100)).ToString();
+		}
+		else
+		{
+			Debug.LogWarning("SFXPlayer is not assigned.");
+		}
 	}
 }
