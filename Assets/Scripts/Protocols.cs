@@ -478,9 +478,13 @@ public partial class NetManager
 					break;
 				}
 			}
-			// 要結束遊戲不播音效
+			// 要結束遊戲時不播特效
 			if (!isEnding)
+			{
 				GamePage.Instance.PlaySound("boom");
+				int randomImage = UnityEngine.Random.Range(1, 4);
+				GamePage.Instance.ShowPopupImage($"brain{randomImage}");
+			}
 		}
 	}
 	private void OnPlayerGuessed(NetPacket packet)

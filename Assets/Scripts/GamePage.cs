@@ -63,7 +63,9 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private Text StartCountdownText;
 	[SerializeField]
-	private PopupMessage Popup;
+	private PopupImage ImagePopup;
+	[SerializeField]
+	private PopupMessage MessagePopup;
 
 	[SerializeField]
 	private AudioSource SFXPlayer;
@@ -300,10 +302,18 @@ public class GamePage : MonoBehaviour
 		}
 	}
 
+	public void ShowPopupImage(string filename)
+	{
+		if (ImagePopup != null)
+			ImagePopup.ShowImage(filename);
+		else
+			Debug.LogWarning("PopupImage is not assigned.");
+	}
+
 	public void ShowPopupMessage(string message)
 	{
-		if (Popup != null)
-			Popup.ShowMessage(message);
+		if (MessagePopup != null)
+			MessagePopup.ShowMessage(message);
 		else
 			Debug.LogWarning("PopupMessage is not assigned.");
 	}
