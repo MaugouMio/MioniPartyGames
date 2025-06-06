@@ -581,9 +581,10 @@ public partial class NetManager
 		{
 			GamePage.Instance.UpdateData();
 			if (!isForceEnd)
+			{
 				GamePage.Instance.ShowGameResult();
-
-			GamePage.Instance.PlaySound("end");
+				GamePage.Instance.PlaySound("end");
+			}
 		}
 	}
 
@@ -592,11 +593,12 @@ public partial class NetManager
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
 		string message = reader.ReadString();
+		byte isHidden = reader.ReadByte();
 
 		if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
 		{
 			string fullMessage = $"[<color=yellow>{user.Name}</color>] {message}";
-			GameData.Instance.AddEventRecord(fullMessage, false);
+			GameData.Instance.AddChatRecord(fullMessage, isHidden == 1);
 			if (GamePage.Instance != null)
 				GamePage.Instance.ShowPopupMessage(fullMessage);
 		}
@@ -646,9 +648,14 @@ public partial class NetManager
 		SendPacket(packet);
 	}
 
-	public void SendChatMessage(byte[] encodedMessage)
+	public void SendChatMessage(byte[] encodedMessage, bool isHidden)
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CHAT, encodedMessage.Length, encodedMessage);
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte((byte)(isHidden ? 1 : 0));
+		writer.WriteBytes(encodedMessage);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CHAT, data.Length, data);
 		SendPacket(packet);
 	}
 }

@@ -49,6 +49,12 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private TextList EventList;
 	[SerializeField]
+	private TextList ChatList;
+	[SerializeField]
+	private Toggle HiddleChatToggle;
+	[SerializeField]
+	private Text HiddleChatToggleText;
+	[SerializeField]
 	private InputField ChatInput;
 	[SerializeField]
 	private TextList GuessRecord;
@@ -102,6 +108,7 @@ public class GamePage : MonoBehaviour
 	{
 		UpdatePlayerInfo();
 		UpdateMiddlePage();
+		UpdateChatList();
 		UpdateEventList();
 		UpdateSelfGuessRecord();
 		UpdateCurrentPlayerGuessRecord();
@@ -221,6 +228,13 @@ public class GamePage : MonoBehaviour
 			default:
 				break;
 		}
+	}
+
+	public void UpdateChatList(bool isNewMessage = false)
+	{
+		ChatList.UpdateData(GameData.Instance.ChatRecord);
+		if (isNewMessage)
+			ChatList.MoveToLast();
 	}
 
 	public void UpdateEventList(bool isNewRecord = false)
@@ -442,6 +456,11 @@ public class GamePage : MonoBehaviour
 		GameResultWindow.SetActive(false);
 	}
 
+	public void ClickHiddenChat(bool isHidden)
+	{
+		HiddleChatToggleText.text = isHidden ? "密電" : "聊天";
+	}
+
 	public void ClickSendChat()
 	{
 		string processedMessage = ChatInput.text.Trim();
@@ -455,7 +474,7 @@ public class GamePage : MonoBehaviour
 			return;
 		}
 
-		NetManager.Instance.SendChatMessage(encodedMessage);
+		NetManager.Instance.SendChatMessage(encodedMessage, HiddleChatToggle.isOn);
 		ChatInput.text = "";
 		ChatInput.ActivateInputField();
 	}

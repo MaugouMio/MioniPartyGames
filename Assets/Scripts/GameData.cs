@@ -40,6 +40,7 @@ public enum GameState
 
 public class GameData
 {
+	public const int MAX_CHAT_RECORD = 30;
 	public const int MAX_EVENT_RECORD = 30;
 
 	private static GameData instance;
@@ -62,6 +63,7 @@ public class GameData
 	public byte GuessingPlayerIndex { get; set; } = 0;
 	public string VotingGuess { get; set; } = "";
 	public Dictionary<ushort, byte> Votes { get; set; } = new Dictionary<ushort, byte>();
+	public Queue<string> ChatRecord { get; set; } = new Queue<string>();
 	public Queue<string> EventRecord { get; set; } = new Queue<string>();
 
 	public void Reset()
@@ -69,6 +71,7 @@ public class GameData
 		SelfUID = 0;
 		UserDatas.Clear();
 		PlayerDatas.Clear();
+		ChatRecord.Clear();
 		EventRecord.Clear();
 		PlayerOrder.Clear();
 		GuessingPlayerIndex = 0;
@@ -83,20 +86,27 @@ public class GameData
 			player.Reset();
 	}
 
-	public void AddEventRecord(string eventText, bool showTime = true)
+	public void AddChatRecord(string message, bool isHidden)
+	{
+		if (ChatRecord.Count >= MAX_CHAT_RECORD)
+			ChatRecord.Dequeue();
+
+		if (isHidden)
+			ChatRecord.Enqueue($"<color=red>㊙︎</color>{message}");
+		else
+			ChatRecord.Enqueue(message);
+
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateChatList(true);
+	}
+
+	public void AddEventRecord(string eventText)
 	{
 		if (EventRecord.Count >= MAX_EVENT_RECORD)
 			EventRecord.Dequeue();
 
-		if (showTime)
-		{
-			string timeText = DateTime.Now.ToString("HH:mm:ss");
-			EventRecord.Enqueue($"[{timeText}] {eventText}");
-		}
-		else
-		{
-			EventRecord.Enqueue(eventText);
-		}
+		string timeText = DateTime.Now.ToString("HH:mm:ss");
+		EventRecord.Enqueue($"[{timeText}] {eventText}");
 
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdateEventList(true);

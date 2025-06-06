@@ -290,15 +290,24 @@ class GameManager:
 		packet = self.new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder='little'))
 		self.broadcast(packet)
 	
-	def broadcast_chat(self, uid, encoded_message):
+	def broadcast_chat(self, uid, encoded_message, is_hidden):
 		data = bytes()
 		data += uid.to_bytes(2, byteorder='little')
 		
 		data += len(encoded_message).to_bytes(1, byteorder='little')
 		data += encoded_message
 		
+		exclude_client = None
+		if is_hidden:
+			if self.game_state == GAMESTATE.GUESSING or self.game_state == GAMESTATE.VOTING:
+				exclude_client = self.player_order[self.current_guessing_idx]
+		if exclude_client == None:
+			data += int(0).to_bytes(1, byteorder='little')
+		else:
+			data += int(1).to_bytes(1, byteorder='little')
+		
 		packet = self.new_packet(PROTOCOL_SERVER.CHAT, data)
-		self.broadcast(packet)
+		self.broadcast(packet, exclude_client)
 	
 	def handle_client(self, conn, addr):
 		"""處理單一客戶端的連線。"""
@@ -462,7 +471,8 @@ class GameManager:
 			self.broadcast_vote(user.uid, vote)
 			self.check_all_votes()
 		elif protocol == PROTOCOL_CLIENT.CHAT:
-			self.broadcast_chat(user.uid, message)
+			is_hidden = message[0] == 1
+			self.broadcast_chat(user.uid, message[1:], is_hidden)
 
 	def start_countdown(self):
 		if self.countdown_timer:
