@@ -563,7 +563,7 @@ public partial class NetManager
 				GamePage.Instance.ShowPopupMessage(messageText);
 
 			if (result == 1)
-				GamePage.Instance.PlaySound("nice");
+				GamePage.Instance.PlaySound("true");
 			else
 				GamePage.Instance.PlaySound("bruh");
 		}
