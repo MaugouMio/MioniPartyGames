@@ -66,6 +66,7 @@ class Player:
 	
 	def reset(self):
 		self.question = ""
+		self.question_locked = False
 		self.guess_history = []
 		self.success_round = 0
 
@@ -223,6 +224,7 @@ class GameManager:
 	def broadcast_question(self, player):
 		data = bytes()
 		data += player.user.uid.to_bytes(2, byteorder='little')
+		data += (1 if player.question_locked else 0).to_bytes(1, byteorder='little')
 		encoded_question = player.question.encode('utf8')
 		data += len(encoded_question).to_bytes(1, byteorder='little')
 		data += encoded_question
@@ -233,6 +235,7 @@ class GameManager:
 		# 傳給玩家本身的資訊不含題目，只做提示已經出好題了
 		data = bytes()
 		data += player.user.uid.to_bytes(2, byteorder='little')
+		data += (1 if player.question_locked else 0).to_bytes(1, byteorder='little')
 		packet = self.new_packet(PROTOCOL_SERVER.QUESTION, data)
 		try:
 			player.user.socket.sendall(packet)
@@ -423,12 +426,17 @@ class GameManager:
 			# if next_player.question != "":
 				# return
 			
-			word = message.decode('utf8').strip()
-			if word == "" or word == next_player.question:
+			is_locked = message[0] == 1
+			word = message[1:].decode('utf8').strip()
+			if word == "" or (word == next_player.question and is_locked == next_player.question_locked):
 				return
 			
 			next_player.question = word
-			print(f"使用者 {user.uid} 向 {next_player.user.uid} 出題：{word}")
+			next_player.question_locked = is_locked
+			if is_locked:
+				print(f"使用者 {user.uid} 向 {next_player.user.uid} 出題：{word}")
+			else:
+				print(f"使用者 {user.uid} 展示 {next_player.user.uid} 的題目：{word}")
 			self.broadcast_question(next_player)
 			
 			self.check_all_given_words()
@@ -513,7 +521,7 @@ class GameManager:
 		"""檢查是否所有玩家都已出題。"""
 		if self.game_state != GAMESTATE.PREPARING:
 			return
-		if any(player.question == "" for player in self.players.values()):
+		if any(player.question_locked == False for player in self.players.values()):
 			return
 		
 		self.game_state = GAMESTATE.GUESSING

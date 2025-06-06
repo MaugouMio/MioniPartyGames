@@ -405,7 +405,8 @@ public class GamePage : MonoBehaviour
 			NetManager.Instance.SendStart();
 	}
 
-	public void ClickAssignQuestion()
+	// mode = 0:輸入框 1:展示按鈕 2:鎖定按鈕
+	public void ClickAssignQuestion(int mode)
 	{
 		byte[] encodedQuestion = System.Text.Encoding.UTF8.GetBytes(QuestionInput.text);
 		if (encodedQuestion.Length == 0)
@@ -419,8 +420,13 @@ public class GamePage : MonoBehaviour
 			return;
 		}
 
-		NetManager.Instance.SendAssignQuestion(encodedQuestion);
-		QuestionInput.text = "";
+		// 輸入框 enter 同時按住左 shift 視同鎖定
+		if (mode == 0 && Input.GetKey(KeyCode.LeftShift))
+			mode = 2;
+
+		NetManager.Instance.SendAssignQuestion(encodedQuestion, mode == 2);
+		if (mode == 2)
+			QuestionInput.text = "";
 	}
 
 	public void ClickConfirmGuess()

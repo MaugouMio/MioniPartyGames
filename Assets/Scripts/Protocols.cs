@@ -419,22 +419,24 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
+		bool isLocked = reader.ReadByte() == 1;
 		if (uid == GameData.Instance.SelfUID)
 		{
 			// 提示自身題目已經出好了
-			if (GameData.Instance.PlayerDatas.ContainsKey(uid))
+			if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 			{
-				PlayerData player = GameData.Instance.PlayerDatas[uid];
-				player.Question = "<color=yellow>答案已屏蔽</color>";
+				string colorFormat = isLocked ? "yellow" : "blue";
+				player.Question = $"<color={colorFormat}>答案已屏蔽</color>";
+				player.QuestionLocked = isLocked;
 			}
 		}
 		else
 		{
 			string question = reader.ReadString();
-			if (GameData.Instance.PlayerDatas.ContainsKey(uid))
+			if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 			{
-				PlayerData player = GameData.Instance.PlayerDatas[uid];
 				player.Question = question;
+				player.QuestionLocked = isLocked;
 			}
 		}
 
@@ -443,7 +445,12 @@ public partial class NetManager
 		{
 			GamePage.Instance.UpdatePlayerInfo();
 			if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
-				GamePage.Instance.ShowPopupMessage($"<color=yellow>{user.Name}</color> 的題目已指派");
+			{
+				if (isLocked)
+					GamePage.Instance.ShowPopupMessage($"<color=yellow>{user.Name}</color> 的題目已指派");
+				else
+					GamePage.Instance.ShowPopupMessage($"<color=#00aa00>{user.Name}</color> 的題目已宣告");
+			}
 		}
 	}
 	private void OnPlayerSuccess(NetPacket packet)
@@ -631,9 +638,14 @@ public partial class NetManager
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CANCEL_START, 0, new byte[0]);
 		SendPacket(packet);
 	}
-	public void SendAssignQuestion(byte[] encodedQuestion)
+	public void SendAssignQuestion(byte[] encodedQuestion, bool isLocked)
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.QUESTION, encodedQuestion.Length, encodedQuestion);
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte((byte)(isLocked ? 1 : 0));
+		writer.WriteBytes(encodedQuestion);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.QUESTION, data.Length, data);
 		SendPacket(packet);
 	}
 	public void SendGuess(byte[] encodedGuess)

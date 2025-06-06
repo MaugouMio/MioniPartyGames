@@ -11,12 +11,14 @@ public class PlayerData
 {
 	public ushort UID { get; set; } = 0;
 	public string Question { get; set; } = "";
+	public bool QuestionLocked { get; set; } = false;
 	public ushort SuccessRound { get; set; } = 0;
 	public List<string> GuessHistory { get; set; } = new List<string>();
 
 	public void Reset()
 	{
 		Question = "";
+		QuestionLocked = false;
 		SuccessRound = 0;
 		GuessHistory.Clear();
 	}
