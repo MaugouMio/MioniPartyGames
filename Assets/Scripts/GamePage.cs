@@ -38,6 +38,8 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private Text IdleCheckButtonText;
 	[SerializeField]
+	private GameObject GiveUpButton;
+	[SerializeField]
 	private Text GuessingPlayer;
 	[SerializeField]
 	private Text GuessedText;
@@ -245,6 +247,7 @@ public class GamePage : MonoBehaviour
 					GuessingPlayer.text = GameData.Instance.UserDatas[guessingPlayerUID].Name;
 
 					bool isSelfGuessing = guessingPlayerUID == GameData.Instance.SelfUID;
+					GiveUpButton.SetActive(isSelfGuessing);
 					GuessedText.gameObject.SetActive(!isSelfGuessing);
 					GuessedText.text = "＿＿＿＿＿＿";
 					GuessInput.gameObject.SetActive(isSelfGuessing);
@@ -258,6 +261,7 @@ public class GamePage : MonoBehaviour
 					ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 					GuessingPlayer.text = GameData.Instance.UserDatas[guessingPlayerUID].Name;
 
+					GiveUpButton.SetActive(false);
 					GuessedText.gameObject.SetActive(true);
 					GuessedText.text = GameData.Instance.VotingGuess;
 					GuessInput.gameObject.SetActive(false);
@@ -447,7 +451,7 @@ public class GamePage : MonoBehaviour
 	{
 		List<Tuple<ushort, ushort>> resultList = new List<Tuple<ushort, ushort>>();
 		foreach (var player in GameData.Instance.PlayerDatas.Values)
-			resultList.Add(new Tuple<ushort, ushort>(player.UID, player.SuccessRound));
+			resultList.Add(new Tuple<ushort, ushort>(player.UID, (ushort)player.SuccessRound));
 		// 按照成功回合由低到高排序
 		resultList.Sort((a, b) => a.Item2.CompareTo(b.Item2));
 
@@ -459,7 +463,12 @@ public class GamePage : MonoBehaviour
 				currentRank = i;
 
 			string playerName = GameData.Instance.UserDatas[resultList[i].Item1].Name;
-			string line = $"{currentRank + 1}.\t{playerName} - {resultList[i].Item2} 輪";
+			string line = "";
+			if ((short)resultList[i].Item2 > 0)
+				line = $"{currentRank + 1}.\t{playerName} - {resultList[i].Item2} 輪";
+			else
+				line = $"{currentRank + 1}.\t{playerName} - 投降";
+
 			if (resultList[i].Item1 == GameData.Instance.SelfUID)
 				line = $"<color=blue>{line}</color>";
 
@@ -515,6 +524,12 @@ public class GamePage : MonoBehaviour
 		NetManager.Instance.SendAssignQuestion(encodedQuestion, mode == 2);
 		if (mode == 2)
 			QuestionInput.text = "";
+	}
+
+	public void ClickGiveUp()
+	{
+		NetManager.Instance.SendGiveUp();
+		StopIdleCheck();
 	}
 
 	public void ClickConfirmGuess()

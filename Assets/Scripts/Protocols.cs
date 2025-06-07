@@ -13,6 +13,7 @@ public enum PROTOCOL_CLIENT
 	GUESS,
 	VOTE,
 	CHAT,
+	GIVE_UP,
 }
 
 public enum PROTOCOL_SERVER
@@ -248,7 +249,7 @@ public partial class NetManager
 				byte result = reader.ReadByte();
 				player.AddGuessRecord(guess, result);
 			}
-			player.SuccessRound = reader.ReadUInt16();
+			player.SuccessRound = reader.ReadInt16();
 			GameData.Instance.PlayerDatas[uid] = player;
 		}
 		// 遊戲階段
@@ -483,7 +484,7 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
-		ushort successRound = reader.ReadUInt16();
+		short successRound = reader.ReadInt16();
 		string answer = reader.ReadString();
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 		{
@@ -492,9 +493,12 @@ public partial class NetManager
 			player.Question = $"<color=yellow>{answer}</color>"; // 更新玩家的名詞為答案
 		}
 
-		string successMessage = $"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 猜出了他的名詞";
-		if (GameData.Instance.UserDatas.ContainsKey(uid))
+		string successMessage = "";
+		if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
+		{
+			successMessage = successRound > 0 ? $"<color=yellow>{user.Name}</color> 猜出了他的名詞" : $"<color=yellow>{user.Name}</color> 放棄了";
 			GameData.Instance.AddEventRecord(successMessage);
+		}
 
 		// 更新介面
 		if (GamePage.Instance != null)
@@ -511,8 +515,8 @@ public partial class NetManager
 					break;
 				}
 			}
-			// 要結束遊戲時不播特效
-			if (!isEnding)
+			// 要結束遊戲時不播特效 (放棄也不播)
+			if (!isEnding && successRound > 0)
 			{
 				GamePage.Instance.PlaySound("boom");
 				int randomImage = UnityEngine.Random.Range(1, 4);
@@ -709,6 +713,12 @@ public partial class NetManager
 
 		byte[] data = writer.GetBytes();
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CHAT, data.Length, data);
+		SendPacket(packet);
+	}
+
+	public void SendGiveUp()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GIVE_UP, 0, new byte[0]);
 		SendPacket(packet);
 	}
 }

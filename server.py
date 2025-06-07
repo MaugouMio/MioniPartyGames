@@ -34,6 +34,7 @@ class PROTOCOL_CLIENT:
 	GUESS			= 6
 	VOTE			= 7
 	CHAT			= 8
+	GIVE_UP			= 9
 
 class PROTOCOL_SERVER:
 	INIT			= 0
@@ -140,7 +141,7 @@ class GameManager:
 				data += len(encoded_guess).to_bytes(1, byteorder='little')
 				data += encoded_guess
 				data += guess[1].to_bytes(1, byteorder='little')
-			data += player.success_round.to_bytes(2, byteorder='little')
+			data += player.success_round.to_bytes(2, signed=True, byteorder='little')
 		# 遊戲階段
 		data += self.game_state.to_bytes(1, byteorder='little')
 		# 玩家順序
@@ -254,7 +255,7 @@ class GameManager:
 	def broadcast_success(self, uid, success_round, answer):
 		data = bytes()
 		data += uid.to_bytes(2, byteorder='little')
-		data += success_round.to_bytes(2, byteorder='little')
+		data += success_round.to_bytes(2, signed=True, byteorder='little')
 		
 		encoded_answer = answer.encode('utf8')
 		data += len(encoded_answer).to_bytes(1, byteorder='little')
@@ -505,6 +506,18 @@ class GameManager:
 		elif protocol == PROTOCOL_CLIENT.CHAT:
 			is_hidden = message[0] == 1
 			self.broadcast_chat(user.uid, message[1:], is_hidden)
+		elif protocol == PROTOCOL_CLIENT.GIVE_UP:
+			if self.game_state != GAMESTATE.GUESSING:
+				return
+			if user.uid not in self.players:
+				return
+			if user.uid != self.player_order[self.current_guessing_idx]:
+				return
+			
+			player = self.players[user.uid]
+			player.success_round = -1
+			self.broadcast_success(user.uid, -1, player.question)
+			self.advance_to_next_player()
 
 	def start_countdown(self):
 		if self.countdown_timer:
@@ -592,7 +605,7 @@ class GameManager:
 			
 			next_uid = self.player_order[self.current_guessing_idx]
 			# 跳過已經猜出的玩家
-			if self.players[next_uid].success_round > 0:
+			if self.players[next_uid].success_round != 0:
 				continue
 			
 			self.game_state = GAMESTATE.GUESSING
