@@ -4,7 +4,23 @@ using System.Collections.Generic;
 public class UserData
 {
 	public ushort UID { get; set; } = 0;
-	public string Name { get; set; } = "";
+	private string name = "";
+	public string Name
+	{
+		get
+		{
+			if (GameData.Instance.IsUserNameDuplicated(name))
+				return $"{name}({UID})"; // 如果名字重複，顯示UID以區分
+			return name;
+		}
+		set
+		{
+			GameData.Instance.RemoveUserName(name);
+			GameData.Instance.AddUserName(value);
+			name = value;
+		}
+	}
+	public string GetOriginalName() { return name; }
 }
 
 public class PlayerData
@@ -68,6 +84,8 @@ public class GameData
 	public Queue<string> ChatRecord { get; set; } = new Queue<string>();
 	public Queue<string> EventRecord { get; set; } = new Queue<string>();
 
+	private Dictionary<string, int> userNameCount = new Dictionary<string, int>();
+
 	public void Reset()
 	{
 		SelfUID = 0;
@@ -76,6 +94,8 @@ public class GameData
 		ChatRecord.Clear();
 		EventRecord.Clear();
 		PlayerOrder.Clear();
+		userNameCount.Clear();
+
 		GuessingPlayerIndex = 0;
 		VotingGuess = "";
 		Votes.Clear();
@@ -119,5 +139,29 @@ public class GameData
 
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdateEventList(true);
+	}
+
+	public void AddUserName(string name)
+	{
+		if (userNameCount.ContainsKey(name))
+			userNameCount[name]++;
+		else
+			userNameCount[name] = 1;
+	}
+
+	public void RemoveUserName(string name)
+	{
+		if (userNameCount.ContainsKey(name))
+		{
+			if (--userNameCount[name] <= 0)
+				userNameCount.Remove(name);
+		}
+	}
+
+	public bool IsUserNameDuplicated(string name)
+	{
+		if (userNameCount.ContainsKey(name))
+			return userNameCount[name] > 1;
+		return false;
 	}
 }

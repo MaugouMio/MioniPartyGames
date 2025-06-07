@@ -285,8 +285,15 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
-		if (GameData.Instance.UserDatas.ContainsKey(uid))
+		if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
+		{
+			GameData.Instance.RemoveUserName(user.GetOriginalName());
 			GameData.Instance.UserDatas.Remove(uid);
+		}
+
+		// 更新使用者名稱
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnUserRename(NetPacket packet)
 	{
@@ -296,7 +303,7 @@ public partial class NetManager
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
 			GameData.Instance.UserDatas[uid].Name = name;
 
-		if (GamePage.Instance != null && GameData.Instance.PlayerDatas.ContainsKey(uid))
+		if (GamePage.Instance != null)
 			GamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnPlayerJoin(NetPacket packet)
