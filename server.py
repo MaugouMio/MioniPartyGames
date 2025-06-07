@@ -66,7 +66,7 @@ class User:
 	def __init__(self, conn, id):
 		self.socket = conn
 		self.uid = id
-		self.name = f"Player_{id}"
+		self.name = ""
 
 class Player:
 	def __init__(self, user):

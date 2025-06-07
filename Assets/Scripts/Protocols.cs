@@ -293,7 +293,10 @@ public partial class NetManager
 
 		// 更新使用者名稱
 		if (GamePage.Instance != null)
+		{
 			GamePage.Instance.UpdatePlayerInfo();
+			GamePage.Instance.UpdateUserInfo();
+		}
 	}
 	private void OnUserRename(NetPacket packet)
 	{
@@ -304,7 +307,10 @@ public partial class NetManager
 			GameData.Instance.UserDatas[uid].Name = name;
 
 		if (GamePage.Instance != null)
+		{
 			GamePage.Instance.UpdatePlayerInfo();
+			GamePage.Instance.UpdateUserInfo();
+		}
 	}
 	private void OnPlayerJoin(NetPacket packet)
 	{

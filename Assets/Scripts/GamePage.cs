@@ -11,6 +11,8 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private List<PlayerInfo> PlayerList;
 	[SerializeField]
+	private List<UserInfo> UserList;
+	[SerializeField]
 	private Button JoinButton;
 	[SerializeField]
 	private Text JoinButtonText;
@@ -116,6 +118,7 @@ public class GamePage : MonoBehaviour
 	private void UpdateDataReal()
 	{
 		UpdatePlayerInfo();
+		UpdateUserInfo();
 		UpdateMiddlePage();
 		UpdateChatList();
 		UpdateEventList();
@@ -185,6 +188,35 @@ public class GamePage : MonoBehaviour
 		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
 		JoinButton.interactable = isJoined || GameData.Instance.CurrentState == GameState.WAITING;
 		JoinButtonText.text = isJoined ? "離開遊戲" : "加入遊戲";
+	}
+
+	public void UpdateUserInfo()
+	{
+		int idx = 0;
+		foreach (var user in GameData.Instance.UserDatas.Values)
+		{
+			// 還沒取名字的忽略不顯示
+			if (user.Name == "")
+				continue;
+
+			UserInfo obj;
+			if (idx >= UserList.Count)
+			{
+				obj = Instantiate(UserList[0]);
+				obj.transform.SetParent(UserList[0].transform.parent, false);
+				UserList.Add(obj);
+			}
+			else
+			{
+				obj = UserList[idx];
+			}
+			obj.gameObject.SetActive(true);
+			obj.UpdateData(user);
+			idx++;
+		}
+		// 關閉未使用的物件
+		while (idx < UserList.Count)
+			UserList[idx++].gameObject.SetActive(false);
 	}
 
 	public void UpdateMiddlePage()
