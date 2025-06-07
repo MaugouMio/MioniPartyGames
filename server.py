@@ -2,19 +2,27 @@ import socket
 import threading
 import random
 import time
+import heapq
 import traceback
 
 class GLOBAL:
-	uid_serial = 1
+	uid_serial = 0
+	free_uid = []
 	
 	# 簡單流水號處理，預期不會有人從 1 號掛機到 65535 號用完還沒斷線
 	@classmethod
 	def GenerateUID(cls):
-		new_uid = cls.uid_serial
+		if len(cls.free_uid) > 0:
+			return heapq.heappop(cls.free_uid)
+		
 		cls.uid_serial += 1
 		if cls.uid_serial > 0xffff:
-			cls.uid_serial = 1
-		return new_uid
+			return -1
+		return cls.uid_serial
+	
+	@classmethod
+	def ReleaseUID(cls, uid):
+		heapq.heappush(cls.free_uid, uid)
 
 class PROTOCOL_CLIENT:
 	NAME			= 0
@@ -322,6 +330,12 @@ class GameManager:
 		self.thread_lock.acquire()
 		
 		uid = GLOBAL.GenerateUID()
+		if uid < 0:
+			conn.close()
+			print(f"同時連線數超過上限，中斷來自 {addr} 的連線")
+			self.thread_lock.release()
+			return
+		
 		user = User(conn, uid)
 		self.users[uid] = user
 		print(f"新連線：{uid} ({addr})")
@@ -340,7 +354,6 @@ class GameManager:
 					
 				protocol = header[0]
 				packet_size = int.from_bytes(header[1:5], byteorder='little')
-				print(f"收到來自 {uid} ({addr}) 的 protocol：{protocol} 長度：{packet_size}")
 				
 				data = bytes()
 				is_disconnected = False
@@ -627,6 +640,7 @@ class GameManager:
 		if uid in self.users:
 			print(f"玩家 {self.users[uid].name} ({uid}) 已移除")
 			del self.users[uid]
+			GLOBAL.ReleaseUID(uid)
 
 def main():
 	HOST = '127.0.0.1'
