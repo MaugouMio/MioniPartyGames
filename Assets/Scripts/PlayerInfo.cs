@@ -41,7 +41,7 @@ public class PlayerInfo : MonoBehaviour
 		}
 		else
 		{
-			bool isProcessingPlayer = playerData.UID == GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+			bool isProcessingPlayer = playerData.UID == GameData.Instance.GetCurrentPlayerUID();
 			if (playerData.SuccessRound > 0)
 				stateMask.color = new Color(0f, 0f, 0f, 0.7f);
 			else if (isProcessingPlayer && (GameData.Instance.CurrentState == GameState.GUESSING || GameData.Instance.CurrentState == GameState.VOTING))

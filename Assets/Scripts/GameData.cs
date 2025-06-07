@@ -88,6 +88,13 @@ public class GameData
 			player.Reset();
 	}
 
+	public ushort GetCurrentPlayerUID()
+	{
+		if (GuessingPlayerIndex >= PlayerOrder.Count)
+			return 0;
+		return PlayerOrder[GuessingPlayerIndex];
+	}
+
 	public void AddChatRecord(string message, bool isHidden)
 	{
 		if (ChatRecord.Count >= MAX_CHAT_RECORD)

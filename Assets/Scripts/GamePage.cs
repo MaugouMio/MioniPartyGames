@@ -32,6 +32,10 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private GameObject GuessingPage;
 	[SerializeField]
+	private GameObject IdleCheckButton;
+	[SerializeField]
+	private Text IdleCheckButtonText;
+	[SerializeField]
 	private Text GuessingPlayer;
 	[SerializeField]
 	private Text GuessedText;
@@ -85,10 +89,12 @@ public class GamePage : MonoBehaviour
 	private bool needUpdate = true;
 	private IEnumerator countdownCoroutine = null;
 	private ushort checkingHistoryUID = 0;
+	private IEnumerator idleCheckCoroutine = null;
 
 	void Awake()
 	{
 		Instance = this;
+		IdleCheckButton.SetActive(false);
 		GameResultWindow.SetActive(false);
 		VolumeSlider.value = PlayerPrefs.GetFloat("SoundVolume", 0.5f);
 		VolumeText.text = ((int)(VolumeSlider.value * 100)).ToString();
@@ -203,7 +209,7 @@ public class GamePage : MonoBehaviour
 				break;
 			case GameState.GUESSING:
 				{
-					ushort guessingPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+					ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 					GuessingPlayer.text = GameData.Instance.UserDatas[guessingPlayerUID].Name;
 
 					bool isSelfGuessing = guessingPlayerUID == GameData.Instance.SelfUID;
@@ -217,7 +223,7 @@ public class GamePage : MonoBehaviour
 				break;
 			case GameState.VOTING:
 				{
-					ushort guessingPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+					ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 					GuessingPlayer.text = GameData.Instance.UserDatas[guessingPlayerUID].Name;
 
 					GuessedText.gameObject.SetActive(true);
@@ -268,7 +274,7 @@ public class GamePage : MonoBehaviour
 		if (GameData.Instance.CurrentState == GameState.WAITING)
 			return;
 		
-		ushort uid = checkingHistoryUID > 0 ? checkingHistoryUID : GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+		ushort uid = checkingHistoryUID > 0 ? checkingHistoryUID : GameData.Instance.GetCurrentPlayerUID();
 		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 		{
 			GuessRecord.UpdateData(null);
@@ -371,6 +377,40 @@ public class GamePage : MonoBehaviour
 		UpdateCurrentPlayerGuessRecord();
 	}
 
+	private IEnumerator IdleCheck(int seconds)
+	{
+		while (seconds > 0)
+		{
+			IdleCheckButtonText.text = $"閒置倒數 {seconds} 秒\n(點擊長考)";
+			yield return new WaitForSeconds(1f);
+			seconds--;
+		}
+		idleCheckCoroutine = null;
+		IdleCheckButton.SetActive(false);
+
+		if (GameData.Instance.CurrentState == GameState.GUESSING)
+			NetManager.Instance.SendGuess(new byte[0]);  // 表示跳過猜測
+		else if (GameData.Instance.CurrentState == GameState.VOTING)
+			NetManager.Instance.SendVote(0);  // 直接投棄權
+	}
+
+	public void StartIdleCheck()
+	{
+		IdleCheckButton.SetActive(true);
+		idleCheckCoroutine = IdleCheck(20);
+		StartCoroutine(idleCheckCoroutine);
+	}
+
+	public void StopIdleCheck()
+	{
+		if (idleCheckCoroutine != null)
+		{
+			StopCoroutine(idleCheckCoroutine);
+			idleCheckCoroutine = null;
+			IdleCheckButton.SetActive(false);
+		}
+	}
+
 	public void ShowGameResult()
 	{
 		List<Tuple<ushort, ushort>> resultList = new List<Tuple<ushort, ushort>>();
@@ -461,6 +501,7 @@ public class GamePage : MonoBehaviour
 
 		NetManager.Instance.SendGuess(encodedGuess);
 		GuessInput.text = "";
+		StopIdleCheck();
 	}
 
 	public void ClickVoteOption(int voteOption)
@@ -471,6 +512,7 @@ public class GamePage : MonoBehaviour
 			return;
 		}
 		NetManager.Instance.SendVote((byte)voteOption);
+		StopIdleCheck();
 	}
 
 	public void ClickCloseResult()

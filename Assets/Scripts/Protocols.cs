@@ -35,6 +35,7 @@ public enum PROTOCOL_SERVER
 	GUESS_RECORD,
 	END,
 	CHAT,
+	SKIP_GUESS,
 }
 
 public class NetPacket
@@ -212,6 +213,9 @@ public partial class NetManager
 			case PROTOCOL_SERVER.CHAT:
 				OnChatMessage(packet);
 				break;
+			case PROTOCOL_SERVER.SKIP_GUESS:
+				OnSkipGuess(packet);
+				break;
 		}
 	}
 
@@ -379,7 +383,7 @@ public partial class NetManager
 
 		if (GameData.Instance.CurrentState == GameState.GUESSING)
 		{
-			ushort guessingPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+			ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 			if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
 				GameData.Instance.AddEventRecord($"輪到 <color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 進行猜題");
 			else
@@ -390,7 +394,8 @@ public partial class NetManager
 		if (GamePage.Instance != null)
 		{
 			GamePage.Instance.UpdateData();
-
+			if (GameData.Instance.CurrentState == GameState.GUESSING && GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID)
+				GamePage.Instance.StartIdleCheck();
 			if (originState == GameState.PREPARING && GameData.Instance.CurrentState == GameState.GUESSING)
 				GamePage.Instance.PlaySound("ding");
 		}
@@ -418,7 +423,7 @@ public partial class NetManager
 			// 猜題玩家更換時強制改顯示該玩家的歷史紀錄
 			if (GameData.Instance.GuessingPlayerIndex < GameData.Instance.PlayerOrder.Count)
 			{
-				ushort currentPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+				ushort currentPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 				GamePage.Instance.ShowPlayerHistoryRecord(currentPlayerUID);
 			}
 		}
@@ -509,7 +514,7 @@ public partial class NetManager
 		GameData.Instance.Votes.Clear();
 		GameData.Instance.CurrentState = GameState.VOTING;
 
-		ushort guessingPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+		ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 		if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
 			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 提問他的名詞是否為 <color=blue>{GameData.Instance.VotingGuess}</color>");
 
@@ -518,6 +523,8 @@ public partial class NetManager
 		{
 			GamePage.Instance.UpdateData();
 			GamePage.Instance.PlaySound("drum");
+			if (guessingPlayerUID != GameData.Instance.SelfUID)
+				GamePage.Instance.StartIdleCheck();
 		}
 	}
 	private void OnPlayerVoted(NetPacket packet)
@@ -616,6 +623,19 @@ public partial class NetManager
 			GameData.Instance.AddChatRecord(fullMessage, isHidden == 1);
 			if (GamePage.Instance != null)
 				GamePage.Instance.ShowPopupMessage(fullMessage);
+		}
+	}
+
+	private void OnSkipGuess(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		ushort uid = reader.ReadUInt16();
+		if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
+		{
+			string message = $"<color=yellow>{user.Name}</color> 因為閒置而跳過猜題";
+			GameData.Instance.AddEventRecord(message);
+			if (GamePage.Instance != null)
+				GamePage.Instance.ShowPopupMessage(message);
 		}
 	}
 

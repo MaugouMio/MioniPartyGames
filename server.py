@@ -46,6 +46,7 @@ class PROTOCOL_SERVER:
 	GUESS_RECORD	= 15
 	END				= 16
 	CHAT			= 17
+	SKIP_GUESS		= 18
 
 class GAMESTATE:
 	WAITING			= 0  # 可以加入遊戲的階段
@@ -312,6 +313,10 @@ class GameManager:
 		packet = self.new_packet(PROTOCOL_SERVER.CHAT, data)
 		self.broadcast(packet, exclude_client)
 	
+	def broadcast_skip_guess(self, uid):
+		packet = self.new_packet(PROTOCOL_SERVER.SKIP_GUESS, uid.to_bytes(2, byteorder='little'))
+		self.broadcast(packet)
+	
 	def handle_client(self, conn, addr):
 		"""處理單一客戶端的連線。"""
 		self.thread_lock.acquire()
@@ -446,6 +451,12 @@ class GameManager:
 			if len(message) > 255:
 				return
 			if user.uid != self.player_order[self.current_guessing_idx]:
+				return
+			
+			# 表示閒置跳過
+			if len(message) == 0:
+				self.broadcast_skip_guess(user.uid)
+				self.advance_to_next_player()
 				return
 			
 			player = self.players[user.uid]
