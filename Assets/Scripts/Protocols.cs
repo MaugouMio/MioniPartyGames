@@ -515,12 +515,19 @@ public partial class NetManager
 					break;
 				}
 			}
-			// 要結束遊戲時不播特效 (放棄也不播)
-			if (!isEnding && successRound > 0)
+			// 要結束遊戲時不播特效
+			if (!isEnding)
 			{
-				GamePage.Instance.PlaySound("boom");
-				int randomImage = UnityEngine.Random.Range(1, 4);
-				GamePage.Instance.ShowPopupImage($"brain{randomImage}");
+				if (successRound > 0)
+				{
+					GamePage.Instance.PlaySound("boom");
+					int randomImage = UnityEngine.Random.Range(1, 4);
+					GamePage.Instance.ShowPopupImage($"brain{randomImage}");
+				}
+				else
+				{
+					GamePage.Instance.PlaySound("bye");
+				}
 			}
 		}
 	}
