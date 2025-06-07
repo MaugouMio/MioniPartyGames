@@ -545,12 +545,12 @@ class GameManager:
 			else:
 				abstain_votes += 1
 		
-		if yes_votes == 0 and no_votes == 0:
+		if yes_votes == no_votes:
 			self.current_guessing_idx -= 1  # 無效投票，讓玩家再猜一個類型
 			self.broadcast_guess_again()
 		else:
 			guessing_player_uid = self.player_order[self.current_guessing_idx]
-			result = 1 if yes_votes >= no_votes else 0
+			result = 1 if yes_votes > no_votes else 0
 			self.players[guessing_player_uid].guess_history.append((self.temp_guess, result))
 			self.broadcast_guess_record(guessing_player_uid, self.temp_guess, result)
 
