@@ -6,6 +6,8 @@ import heapq
 import traceback
 
 class GLOBAL:
+	GAME_VERSION = 1
+	
 	uid_serial = 0
 	free_uid = []
 	
@@ -35,6 +37,7 @@ class PROTOCOL_CLIENT:
 	VOTE			= 7
 	CHAT			= 8
 	GIVE_UP			= 9
+	VERSION			= 10
 
 class PROTOCOL_SERVER:
 	INIT			= 0
@@ -56,6 +59,7 @@ class PROTOCOL_SERVER:
 	END				= 16
 	CHAT			= 17
 	SKIP_GUESS		= 18
+	VERSION			= 19
 
 class GAMESTATE:
 	WAITING			= 0  # 可以加入遊戲的階段
@@ -68,6 +72,13 @@ class User:
 		self.socket = conn
 		self.uid = id
 		self.name = ""
+		self.version_checked = False
+	
+	def check_version(self):
+		if not self.version_checked:
+			self.socket.close()
+			return False
+		return True
 
 class Player:
 	def __init__(self, user):
@@ -160,6 +171,14 @@ class GameManager:
 			data += vote.to_bytes(1, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.INIT, data)
+		user = self.users[uid]
+		try:
+			user.socket.sendall(packet)
+		except:
+			pass
+	
+	def send_version_check_result(self, uid):
+		packet = self.new_packet(PROTOCOL_SERVER.VERSION, GLOBAL.GAME_VERSION.to_bytes(4, byteorder='little'))
 		user = self.users[uid]
 		try:
 			user.socket.sendall(packet)
@@ -388,7 +407,20 @@ class GameManager:
 
 	def process_message(self, user, protocol, message):
 		"""處理來自客戶端的訊息。"""
-		if protocol == PROTOCOL_CLIENT.NAME:
+		if protocol == PROTOCOL_CLIENT.VERSION:
+			if user.version_checked:
+				return
+			
+			version = int.from_bytes(message, byteorder='little')
+			self.send_version_check_result(user.uid)
+			if version != GLOBAL.GAME_VERSION:
+				user.socket.close()
+				return
+			
+			user.version_checked = True
+		elif protocol == PROTOCOL_CLIENT.NAME:
+			if not user.check_version():
+				return
 			if len(message) > 255:
 				return
 			
@@ -401,6 +433,8 @@ class GameManager:
 			
 			self.broadcast_rename(user.uid, new_name)
 		elif protocol == PROTOCOL_CLIENT.JOIN:
+			if not user.check_version():
+				return
 			if self.game_state != GAMESTATE.WAITING:
 				return
 			if user.uid in self.players:
@@ -413,9 +447,13 @@ class GameManager:
 			self.stop_countdown()
 			self.broadcast_join(user.uid)
 		elif protocol == PROTOCOL_CLIENT.LEAVE:
+			if not user.check_version():
+				return
 			self.remove_player(user.uid)
 			print(f"使用者 {user.uid} 退出遊戲")
 		elif protocol == PROTOCOL_CLIENT.START:
+			if not user.check_version():
+				return
 			if self.game_state != GAMESTATE.WAITING:
 				return
 			if user.uid not in self.players:
@@ -426,6 +464,8 @@ class GameManager:
 			self.start_countdown()
 			print(f"使用者 {user.uid} 要求開始遊戲")
 		elif protocol == PROTOCOL_CLIENT.CANCEL_START:
+			if not user.check_version():
+				return
 			if self.game_state != GAMESTATE.WAITING:
 				return
 			if user.uid not in self.players:
@@ -434,6 +474,8 @@ class GameManager:
 			self.stop_countdown()
 			print(f"使用者 {user.uid} 取消開始遊戲倒數")
 		elif protocol == PROTOCOL_CLIENT.QUESTION:
+			if not user.check_version():
+				return
 			if self.game_state != GAMESTATE.PREPARING:
 				return
 			if len(message) > 255:
@@ -460,6 +502,8 @@ class GameManager:
 			
 			self.check_all_given_words()
 		elif protocol == PROTOCOL_CLIENT.GUESS:
+			if not user.check_version():
+				return
 			if self.game_state != GAMESTATE.GUESSING:
 				return
 			if len(message) > 255:
@@ -488,6 +532,8 @@ class GameManager:
 			
 			self.broadcast_guess()
 		elif protocol == PROTOCOL_CLIENT.VOTE:
+			if not user.check_version():
+				return
 			if self.game_state != GAMESTATE.VOTING:
 				return
 			if user.uid not in self.players:
@@ -504,9 +550,13 @@ class GameManager:
 			self.broadcast_vote(user.uid, vote)
 			self.check_all_votes()
 		elif protocol == PROTOCOL_CLIENT.CHAT:
+			if not user.check_version():
+				return
 			is_hidden = message[0] == 1
 			self.broadcast_chat(user.uid, message[1:], is_hidden)
 		elif protocol == PROTOCOL_CLIENT.GIVE_UP:
+			if not user.check_version():
+				return
 			if self.game_state != GAMESTATE.GUESSING:
 				return
 			if user.uid not in self.players:

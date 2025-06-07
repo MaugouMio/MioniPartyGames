@@ -89,6 +89,7 @@ public partial class NetManager : MonoBehaviour
 
 			m_PacketQueue = new Queue<NetPacket>();
 			OnConnected?.Invoke();
+			SendVersionCheck();
 		}
 		catch
 		{

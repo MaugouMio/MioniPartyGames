@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class ConnectPage : MonoBehaviour
 {
+	public static ConnectPage Instance { get; private set; }
+
 	[SerializeField]
 	private InputField IP_Input;
 	[SerializeField]
@@ -20,26 +22,27 @@ public class ConnectPage : MonoBehaviour
 	[SerializeField]
 	private GameObject TopMask;
 
+	void Awake()
+	{
+		Instance = this;
+	}
+
 	// Start is called once before the first execution of Update after the MonoBehaviour is created
 	void Start()
     {
 		IP_Input.text = PlayerPrefs.GetString("ServerIP", "");
 		NameInput.text = PlayerPrefs.GetString("PlayerName", "");
 
-		NetManager.Instance.OnConnected = OnConnected;
+		//NetManager.Instance.OnConnected = OpenNameWindow;
 		NetManager.Instance.OnDisconnected = OnDisconnected;
     }
 
 	void OnDestroy()
 	{
-		NetManager.Instance.OnConnected = null;
-		NetManager.Instance.OnDisconnected = null;
-	}
+		Instance = null;
 
-	private void OnConnected()
-	{
-		//ConnectingMask.SetActive(false);
-		NameWindow.SetActive(true);
+		//NetManager.Instance.OnConnected = null;
+		NetManager.Instance.OnDisconnected = null;
 	}
 
 	private void OnDisconnected()
@@ -47,7 +50,24 @@ public class ConnectPage : MonoBehaviour
 		ConnectingMask.SetActive(false);
 		NameWindow.SetActive(false);
 		TopMask.SetActive(false);
-		ConnectHintText.text = "連線中斷";
+		SetConnectMessage("連線中斷");
+	}
+
+	public void SetConnectMessage(string message)
+	{
+		ConnectHintText.text = message;
+	}
+
+	public void OpenNameWindow()
+	{
+		//ConnectingMask.SetActive(false);
+		NameWindow.SetActive(true);
+	}
+
+	public void OnVersionCheckFailed()
+	{
+		ConnectingMask.SetActive(false);
+		SetConnectMessage("遊戲版本不符，請更新遊戲");
 	}
 
 	public void ClickConnect()
@@ -58,7 +78,7 @@ public class ConnectPage : MonoBehaviour
 		string[] param = IP_Input.text.Split(':');
 		if (param.Length != 2)
 		{
-			ConnectHintText.text = "請輸入正確的 IP:PORT 格式";
+			SetConnectMessage("請輸入正確的 IP:PORT 格式");
 			return;
 		}
 
@@ -70,7 +90,7 @@ public class ConnectPage : MonoBehaviour
 		}
 		catch
 		{
-			ConnectHintText.text = "請輸入正確的 IP:PORT 格式";
+			SetConnectMessage("請輸入正確的 IP:PORT 格式");
 			return;
 		}
 

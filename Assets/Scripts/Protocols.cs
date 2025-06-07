@@ -14,6 +14,7 @@ public enum PROTOCOL_CLIENT
 	VOTE,
 	CHAT,
 	GIVE_UP,
+	VERSION,
 }
 
 public enum PROTOCOL_SERVER
@@ -37,6 +38,7 @@ public enum PROTOCOL_SERVER
 	END,
 	CHAT,
 	SKIP_GUESS,
+	VERSION,
 }
 
 public class NetPacket
@@ -217,6 +219,9 @@ public partial class NetManager
 			case PROTOCOL_SERVER.SKIP_GUESS:
 				OnSkipGuess(packet);
 				break;
+			case PROTOCOL_SERVER.VERSION:
+				OnVersionCheckResult(packet);
+				break;
 		}
 	}
 
@@ -275,6 +280,23 @@ public partial class NetManager
 		// 更新介面
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdateData();
+	}
+
+	private void OnVersionCheckResult(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		uint serverVersion = reader.ReadUInt32();
+		if (serverVersion == GameData.GAME_VERSION)
+		{
+			if (ConnectPage.Instance != null)
+				ConnectPage.Instance.OpenNameWindow();
+		}
+		else
+		{
+			Debug.LogError($"遊戲版本不符，伺服器版本：{serverVersion}, 客戶端版本：{GameData.GAME_VERSION}");
+			if (ConnectPage.Instance != null)
+				ConnectPage.Instance.OnVersionCheckFailed();
+		}
 	}
 	private void OnUserConnect(NetPacket packet)
 	{
@@ -726,6 +748,16 @@ public partial class NetManager
 	public void SendGiveUp()
 	{
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GIVE_UP, 0, new byte[0]);
+		SendPacket(packet);
+	}
+
+	private void SendVersionCheck()
+	{
+		ByteWriter writer = new ByteWriter();
+		writer.WriteUInt32(GameData.GAME_VERSION);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VERSION, data.Length, data);
 		SendPacket(packet);
 	}
 }
