@@ -596,9 +596,12 @@ class GameManager:
 			
 			order_index = self.player_order.index(uid)
 			del self.player_order[order_index]
-			if order_index == self.current_guessing_idx:
-				self.current_guessing_idx -= 1  # 後面會遞補回這個 index 所以要往回退一格，下一個才會是現在這個 index
-				self.advance_to_next_player()
+			if order_index <= self.current_guessing_idx:
+				self.current_guessing_idx -= 1  # 後面要往回遞補
+				if order_index > self.current_guessing_idx:  # 當前猜題者離開，往後順延
+					self.advance_to_next_player()
+				else:
+					self.broadcast_player_order()
 		
 		if uid in self.votes:
 			del self.votes[uid]
