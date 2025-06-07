@@ -413,7 +413,15 @@ public partial class NetManager
 
 		// 更新介面
 		if (GamePage.Instance != null)
+		{
 			GamePage.Instance.UpdatePlayerInfo();
+			// 猜題玩家更換時強制改顯示該玩家的歷史紀錄
+			if (GameData.Instance.GuessingPlayerIndex < GameData.Instance.PlayerOrder.Count)
+			{
+				ushort currentPlayerUID = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+				GamePage.Instance.ShowPlayerHistoryRecord(currentPlayerUID);
+			}
+		}
 	}
 	private void OnQuestionAssigned(NetPacket packet)
 	{

@@ -59,6 +59,8 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private TextList GuessRecord;
 	[SerializeField]
+	private Text CurrentPlayerGuessRecordTitle;
+	[SerializeField]
 	private TextList CurrentPlayerGuessRecord;
 	[SerializeField]
 	private Button StartButton;
@@ -82,6 +84,7 @@ public class GamePage : MonoBehaviour
 
 	private bool needUpdate = true;
 	private IEnumerator countdownCoroutine = null;
+	private ushort checkingHistoryUID = 0;
 
 	void Awake()
 	{
@@ -265,13 +268,14 @@ public class GamePage : MonoBehaviour
 		if (GameData.Instance.CurrentState == GameState.WAITING)
 			return;
 		
-		ushort uid = GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
+		ushort uid = checkingHistoryUID > 0 ? checkingHistoryUID : GameData.Instance.PlayerOrder[GameData.Instance.GuessingPlayerIndex];
 		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 		{
 			GuessRecord.UpdateData(null);
 			return;
 		}
 
+		CurrentPlayerGuessRecordTitle.text = $"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color>的猜測記錄";
 		CurrentPlayerGuessRecord.UpdateData(player.GuessHistory);
 		if (isNewRecord)
 			CurrentPlayerGuessRecord.MoveToLast();
@@ -353,6 +357,18 @@ public class GamePage : MonoBehaviour
 		{
 			Debug.LogWarning("SFXPlayer is not assigned.");
 		}
+	}
+
+	public void ShowPlayerHistoryRecord(ushort uid)
+	{
+		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+		{
+			ShowPopupMessage("玩家資料不存在");
+			return;
+		}
+
+		checkingHistoryUID = uid;
+		UpdateCurrentPlayerGuessRecord();
 	}
 
 	public void ShowGameResult()
@@ -464,7 +480,7 @@ public class GamePage : MonoBehaviour
 
 	public void ClickHiddenChat(bool isHidden)
 	{
-		HiddleChatToggleText.text = isHidden ? "密電" : "聊天";
+		HiddleChatToggleText.text = isHidden ? "密電" : "文本";
 	}
 
 	public void ClickSendChat()

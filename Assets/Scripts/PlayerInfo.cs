@@ -4,6 +4,8 @@ using UnityEngine.UI;
 public class PlayerInfo : MonoBehaviour
 {
 	[SerializeField]
+	private Button selfButton;
+	[SerializeField]
 	private Text nameText;
 	[SerializeField]
 	private Text questionText;
@@ -14,8 +16,12 @@ public class PlayerInfo : MonoBehaviour
 	[SerializeField]
 	private GameObject selfIndicator;
 
+	private ushort selfUID = 0;
+
 	public void UpdateData(PlayerData playerData)
 	{
+		selfButton.enabled = GameData.Instance.CurrentState == GameState.GUESSING || GameData.Instance.CurrentState == GameState.VOTING;
+
 		if (!GameData.Instance.UserDatas.ContainsKey(playerData.UID))
 			return;
 
@@ -65,5 +71,12 @@ public class PlayerInfo : MonoBehaviour
 		}
 
 		selfIndicator.SetActive(playerData.UID == GameData.Instance.SelfUID);
+		selfUID = playerData.UID;
+	}
+
+	public void OnClicked()
+	{
+		if (GamePage.Instance != null)
+			GamePage.Instance.ShowPlayerHistoryRecord(selfUID);
 	}
 }
