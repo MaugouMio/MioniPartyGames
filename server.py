@@ -90,6 +90,7 @@ class Player:
 		self.question_locked = False
 		self.guess_history = []
 		self.success_round = 0
+		self.skipped_round = 0
 
 class GameManager:
 	START_COUNTDOWN_DURATION = 5
@@ -511,17 +512,19 @@ class GameManager:
 			if user.uid != self.player_order[self.current_guessing_idx]:
 				return
 			
-			# 表示閒置跳過
+			player = self.players[user.uid]
+			
+			# 表示跳過
 			if len(message) == 0:
+				player.skipped_round += 1
 				self.broadcast_skip_guess(user.uid)
 				self.advance_to_next_player()
 				return
 			
-			player = self.players[user.uid]
 			guess = message.decode('utf8').strip()
 			if guess.lower() == player.question.lower():
-				player.success_round = self.current_round
-				self.broadcast_success(user.uid, self.current_round, guess)
+				player.success_round = self.current_round - player.skipped_round
+				self.broadcast_success(user.uid, player.success_round, guess)
 				self.advance_to_next_player()
 				return
 			

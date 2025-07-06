@@ -34,6 +34,8 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private GameObject GuessingPage;
 	[SerializeField]
+	private Toggle TempLeaveToggle;
+	[SerializeField]
 	private GameObject IdleCheckButton;
 	[SerializeField]
 	private Text IdleCheckButtonText;
@@ -47,6 +49,8 @@ public class GamePage : MonoBehaviour
 	private InputField GuessInput;
 	[SerializeField]
 	private GameObject GuessConfirmButtons;
+	[SerializeField]
+	private GameObject PassGuessButton;
 	[SerializeField]
 	private GameObject VoteButtons;
 	[SerializeField]
@@ -253,6 +257,8 @@ public class GamePage : MonoBehaviour
 					GuessInput.gameObject.SetActive(isSelfGuessing);
 
 					GuessConfirmButtons.SetActive(isSelfGuessing);
+					if (isSelfGuessing)  // 剩自己還沒猜出來就不用想跳過了
+						PassGuessButton.SetActive(!GameData.Instance.IsOthersAllGuessed());
 					VoteButtons.SetActive(false);
 				}
 				break;
@@ -369,6 +375,11 @@ public class GamePage : MonoBehaviour
 		}
 	}
 
+	public void ResetTempLeaveToggle()
+	{
+		TempLeaveToggle.isOn = false;
+	}
+
 	public void ShowPopupImage(string filename)
 	{
 		if (ImagePopup != null)
@@ -413,6 +424,14 @@ public class GamePage : MonoBehaviour
 		UpdateCurrentPlayerGuessRecord();
 	}
 
+	private void PassOperation()
+	{
+		if (GameData.Instance.CurrentState == GameState.GUESSING)
+			NetManager.Instance.SendGuess(new byte[0]);  // 表示跳過猜測
+		else if (GameData.Instance.CurrentState == GameState.VOTING)
+			NetManager.Instance.SendVote(0);  // 直接投棄權
+	}
+
 	private IEnumerator IdleCheck(int seconds)
 	{
 		while (seconds > 0)
@@ -424,14 +443,23 @@ public class GamePage : MonoBehaviour
 		idleCheckCoroutine = null;
 		IdleCheckButton.SetActive(false);
 
-		if (GameData.Instance.CurrentState == GameState.GUESSING)
-			NetManager.Instance.SendGuess(new byte[0]);  // 表示跳過猜測
-		else if (GameData.Instance.CurrentState == GameState.VOTING)
-			NetManager.Instance.SendVote(0);  // 直接投棄權
+		PassOperation();
 	}
 
 	public void StartIdleCheck()
 	{
+		// 輪到自己猜題，但其他玩家都已經猜過了，不需要閒置檢查
+		if (GameData.Instance.CurrentState == GameState.GUESSING && GameData.Instance.IsOthersAllGuessed())
+			return;
+
+		// 有勾暫離時直接跳過不用等閒置
+		if (TempLeaveToggle.isOn)
+		{
+			ShowPopupMessage("暫離模式啟動中，自動跳過操作");
+			PassOperation();
+			return;
+		}
+
 		IdleCheckButton.SetActive(true);
 		idleCheckCoroutine = IdleCheck(20);
 		StartCoroutine(idleCheckCoroutine);
@@ -548,6 +576,12 @@ public class GamePage : MonoBehaviour
 
 		NetManager.Instance.SendGuess(encodedGuess);
 		GuessInput.text = "";
+		StopIdleCheck();
+	}
+
+	public void ClickPassGuess()
+	{
+		NetManager.Instance.SendGuess(new byte[0]);  // 表示跳過猜測
 		StopIdleCheck();
 	}
 

@@ -166,4 +166,14 @@ public class GameData
 			return userNameCount[name] > 1;
 		return false;
 	}
+
+	public bool IsOthersAllGuessed()
+	{
+		foreach (var player in PlayerDatas.Values)
+		{
+			if (player.UID != SelfUID && player.SuccessRound == 0)
+				return false;
+		}
+		return true;
+	}
 }

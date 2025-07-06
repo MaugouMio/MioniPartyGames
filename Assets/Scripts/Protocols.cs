@@ -405,6 +405,7 @@ public partial class NetManager
 		if (GamePage.Instance != null)
 		{
 			GamePage.Instance.StopCountdown();
+			GamePage.Instance.ResetTempLeaveToggle();
 			GamePage.Instance.UpdateData();
 
 			GamePage.Instance.PlaySound("ding");
@@ -678,7 +679,7 @@ public partial class NetManager
 		ushort uid = reader.ReadUInt16();
 		if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
 		{
-			string message = $"<color=yellow>{user.Name}</color> 因為閒置而跳過猜題";
+			string message = $"<color=yellow>{user.Name}</color> 跳過猜題";
 			GameData.Instance.AddEventRecord(message);
 			if (GamePage.Instance != null)
 				GamePage.Instance.ShowPopupMessage(message);
