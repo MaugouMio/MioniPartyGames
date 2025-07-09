@@ -75,6 +75,8 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private TextList CurrentPlayerGuessRecord;
 	[SerializeField]
+	private Text CurrentPlayerQuestionText;
+	[SerializeField]
 	private Button StartButton;
 	[SerializeField]
 	private Text StartButtonText;
@@ -319,7 +321,7 @@ public class GamePage : MonoBehaviour
 		ushort uid = checkingHistoryUID > 0 ? checkingHistoryUID : GameData.Instance.GetCurrentPlayerUID();
 		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 		{
-			GuessRecord.UpdateData(null);
+			CurrentPlayerGuessRecord.UpdateData(null);
 			return;
 		}
 
@@ -327,6 +329,8 @@ public class GamePage : MonoBehaviour
 		CurrentPlayerGuessRecord.UpdateData(player.GuessHistory);
 		if (isNewRecord)
 			CurrentPlayerGuessRecord.MoveToLast();
+
+		CurrentPlayerQuestionText.text = uid == GameData.Instance.SelfUID ? "<i>答案已屏蔽</i>" : player.Question;
 	}
 
 	public void UpdateStartButton()
