@@ -36,6 +36,8 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private Toggle TempLeaveToggle;
 	[SerializeField]
+	private GameObject GuessPageTopButtonGroup;
+	[SerializeField]
 	private GameObject IdleCheckButton;
 	[SerializeField]
 	private Text IdleCheckButtonText;
@@ -43,6 +45,8 @@ public class GamePage : MonoBehaviour
 	private GameObject GiveUpButton;
 	[SerializeField]
 	private Text GuessingPlayer;
+	[SerializeField]
+	private Text GuessingQuestionText;
 	[SerializeField]
 	private Text GuessedText;
 	[SerializeField]
@@ -75,8 +79,6 @@ public class GamePage : MonoBehaviour
 	[SerializeField]
 	private TextList CurrentPlayerGuessRecord;
 	[SerializeField]
-	private Text CurrentPlayerQuestionText;
-	[SerializeField]
 	private Button StartButton;
 	[SerializeField]
 	private Text StartButtonText;
@@ -104,6 +106,7 @@ public class GamePage : MonoBehaviour
 	void Awake()
 	{
 		Instance = this;
+		GuessPageTopButtonGroup.SetActive(false);
 		IdleCheckButton.SetActive(false);
 		GameResultWindow.SetActive(false);
 		VolumeSlider.value = PlayerPrefs.GetFloat("SoundVolume", 0.5f);
@@ -227,6 +230,16 @@ public class GamePage : MonoBehaviour
 			UserList[idx++].gameObject.SetActive(false);
 	}
 
+	private void SetGuessingPlayerBaseInfo()
+	{
+		ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
+		bool isSelfGuessing = guessingPlayerUID == GameData.Instance.SelfUID;
+
+		GuessingPlayer.text = $"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 的回合";
+		GuessingQuestionText.gameObject.SetActive(!isSelfGuessing);
+		GuessingQuestionText.text = GameData.Instance.PlayerDatas[guessingPlayerUID].Question;
+	}
+
 	public void UpdateMiddlePage()
 	{
 		IdlePage.SetActive(GameData.Instance.CurrentState == GameState.WAITING);
@@ -249,10 +262,10 @@ public class GamePage : MonoBehaviour
 				break;
 			case GameState.GUESSING:
 				{
-					ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
-					GuessingPlayer.text = GameData.Instance.UserDatas[guessingPlayerUID].Name;
+					SetGuessingPlayerBaseInfo();
+					bool isSelfGuessing = GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID;
 
-					bool isSelfGuessing = guessingPlayerUID == GameData.Instance.SelfUID;
+					GuessPageTopButtonGroup.SetActive(isSelfGuessing);
 					GiveUpButton.SetActive(isSelfGuessing);
 					GuessedText.gameObject.SetActive(!isSelfGuessing);
 					GuessedText.text = "＿＿＿＿＿＿";
@@ -266,16 +279,17 @@ public class GamePage : MonoBehaviour
 				break;
 			case GameState.VOTING:
 				{
-					ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
-					GuessingPlayer.text = GameData.Instance.UserDatas[guessingPlayerUID].Name;
+					SetGuessingPlayerBaseInfo();
+					bool isSelfGuessing = GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID;
 
+					GuessPageTopButtonGroup.SetActive(!isSelfGuessing);
 					GiveUpButton.SetActive(false);
 					GuessedText.gameObject.SetActive(true);
 					GuessedText.text = GameData.Instance.VotingGuess;
 					GuessInput.gameObject.SetActive(false);
 
 					GuessConfirmButtons.SetActive(false);
-					VoteButtons.SetActive(guessingPlayerUID != GameData.Instance.SelfUID);
+					VoteButtons.SetActive(!isSelfGuessing);
 				}
 				break;
 			default:
@@ -329,8 +343,6 @@ public class GamePage : MonoBehaviour
 		CurrentPlayerGuessRecord.UpdateData(player.GuessHistory);
 		if (isNewRecord)
 			CurrentPlayerGuessRecord.MoveToLast();
-
-		CurrentPlayerQuestionText.text = uid == GameData.Instance.SelfUID ? "<i>答案已屏蔽</i>" : player.Question;
 	}
 
 	public void UpdateStartButton()
