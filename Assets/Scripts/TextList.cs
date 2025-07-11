@@ -2,21 +2,29 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(ScrollRect))]
 public class TextList : MonoBehaviour
 {
-	[SerializeField]
 	private ScrollRect scrollRect;
+	private readonly List<Text> textList = new();
+
 	[SerializeField]
-	private List<Text> textList;
+	Text listItemTemplate;
 
 	private int moveToLastTick = 0;
 
+	void Awake()
+	{
+		scrollRect = GetComponent<ScrollRect>();
+
+		if (listItemTemplate == null)
+			Debug.LogError($"TextList item template is empty for object {gameObject.name}");
+	}
+
 	void Start()
 	{
-		if (textList.Count == 0)
-			Debug.LogError($"TextList component is empty for object {gameObject.name}");
-		else
-			textList[0].gameObject.SetActive(false); // 初始時隱藏第一個 Text 元件
+		listItemTemplate.gameObject.SetActive(false); // 初始時隱藏預設的 Text 元件
+		textList.Add(listItemTemplate);
 	}
 
 	void Update()
