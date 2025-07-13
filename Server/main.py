@@ -2,70 +2,10 @@ import socket
 import threading
 import random
 import time
-import heapq
 import traceback
 
-class GLOBAL:
-	GAME_VERSION = 1
-	
-	uid_serial = 0
-	free_uid = []
-	
-	# 簡單流水號處理，預期不會有人從 1 號掛機到 65535 號用完還沒斷線
-	@classmethod
-	def GenerateUID(cls):
-		if len(cls.free_uid) > 0:
-			return heapq.heappop(cls.free_uid)
-		
-		cls.uid_serial += 1
-		if cls.uid_serial > 0xffff:
-			return -1
-		return cls.uid_serial
-	
-	@classmethod
-	def ReleaseUID(cls, uid):
-		heapq.heappush(cls.free_uid, uid)
-
-class PROTOCOL_CLIENT:
-	NAME			= 0
-	JOIN			= 1
-	LEAVE			= 2
-	START			= 3
-	CANCEL_START	= 4
-	QUESTION		= 5
-	GUESS			= 6
-	VOTE			= 7
-	CHAT			= 8
-	GIVE_UP			= 9
-	VERSION			= 10
-
-class PROTOCOL_SERVER:
-	INIT			= 0
-	CONNECT			= 1
-	DISCONNECT		= 2
-	NAME			= 3
-	JOIN			= 4
-	LEAVE			= 5
-	START_COUNTDOWN	= 6
-	START			= 7
-	GAMESTATE		= 8
-	PLAYER_ORDER	= 9
-	QUESTION		= 10
-	SUCCESS			= 11
-	GUESS			= 12
-	VOTE			= 13
-	GUESS_AGAIN		= 14
-	GUESS_RECORD	= 15
-	END				= 16
-	CHAT			= 17
-	SKIP_GUESS		= 18
-	VERSION			= 19
-
-class GAMESTATE:
-	WAITING			= 0  # 可以加入遊戲的階段
-	PREPARING		= 1  # 遊戲剛開始的出題階段
-	GUESSING		= 2  # 某個玩家猜題當中
-	VOTING			= 3  # 某個玩家猜測一個類別，等待其他人投票是否符合
+from game_define import *
+import id_generator
 
 class User:
 	def __init__(self, conn, id):
@@ -93,7 +33,6 @@ class Player:
 		self.skipped_round = 0
 
 class GameManager:
-	START_COUNTDOWN_DURATION = 5
 	def __init__(self):
 		self.thread_lock = threading.Lock()
 		
@@ -179,7 +118,7 @@ class GameManager:
 			pass
 	
 	def send_version_check_result(self, uid):
-		packet = self.new_packet(PROTOCOL_SERVER.VERSION, GLOBAL.GAME_VERSION.to_bytes(4, byteorder='little'))
+		packet = self.new_packet(PROTOCOL_SERVER.VERSION, CONST.GAME_VERSION.to_bytes(4, byteorder='little'))
 		user = self.users[uid]
 		try:
 			user.socket.sendall(packet)
@@ -224,7 +163,7 @@ class GameManager:
 			data += int(0).to_bytes(1, byteorder='little')
 		else:
 			data += int(1).to_bytes(1, byteorder='little')
-			data += GameManager.START_COUNTDOWN_DURATION.to_bytes(1, byteorder='little')
+			data += CONST.START_COUNTDOWN_DURATION.to_bytes(1, byteorder='little')
 		
 		packet = self.new_packet(PROTOCOL_SERVER.START_COUNTDOWN, data)
 		self.broadcast(packet)
@@ -350,7 +289,7 @@ class GameManager:
 		"""處理單一客戶端的連線。"""
 		self.thread_lock.acquire()
 		
-		uid = GLOBAL.GenerateUID()
+		uid = id_generator.generate_player_uid()
 		if uid < 0:
 			conn.close()
 			print(f"同時連線數超過上限，中斷來自 {addr} 的連線")
@@ -414,7 +353,7 @@ class GameManager:
 			
 			version = int.from_bytes(message, byteorder='little')
 			self.send_version_check_result(user.uid)
-			if version != GLOBAL.GAME_VERSION:
+			if version != CONST.GAME_VERSION:
 				user.socket.close()
 				return
 			
@@ -576,7 +515,7 @@ class GameManager:
 		if self.countdown_timer:
 			return
 		
-		self.countdown_timer = threading.Timer(GameManager.START_COUNTDOWN_DURATION, self.start_game)
+		self.countdown_timer = threading.Timer(CONST.START_COUNTDOWN_DURATION, self.start_game)
 		self.countdown_timer.start()
 		self.broadcast_start_countdown()
 	
@@ -706,7 +645,7 @@ class GameManager:
 		if uid in self.users:
 			print(f"玩家 {self.users[uid].name} ({uid}) 已移除")
 			del self.users[uid]
-			GLOBAL.ReleaseUID(uid)
+			id_generator.release_player_uid(uid)
 
 def main():
 	HOST = '127.0.0.1'

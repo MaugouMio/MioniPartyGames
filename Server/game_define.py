@@ -1,0 +1,45 @@
+class CONST:
+	GAME_VERSION				= 1
+	START_COUNTDOWN_DURATION	= 5
+
+class PROTOCOL_CLIENT:
+	NAME			= 0
+	JOIN			= 1
+	LEAVE			= 2
+	START			= 3
+	CANCEL_START	= 4
+	QUESTION		= 5
+	GUESS			= 6
+	VOTE			= 7
+	CHAT			= 8
+	GIVE_UP			= 9
+	VERSION			= 10
+
+class PROTOCOL_SERVER:
+	INIT			= 0
+	CONNECT			= 1
+	DISCONNECT		= 2
+	NAME			= 3
+	JOIN			= 4
+	LEAVE			= 5
+	START_COUNTDOWN	= 6
+	START			= 7
+	GAMESTATE		= 8
+	PLAYER_ORDER	= 9
+	QUESTION		= 10
+	SUCCESS			= 11
+	GUESS			= 12
+	VOTE			= 13
+	GUESS_AGAIN		= 14
+	GUESS_RECORD	= 15
+	END				= 16
+	CHAT			= 17
+	SKIP_GUESS		= 18
+	VERSION			= 19
+
+class GAMESTATE:
+	WAITING			= 0  # 可以加入遊戲的階段
+	PREPARING		= 1  # 遊戲剛開始的出題階段
+	GUESSING		= 2  # 某個玩家猜題當中
+	VOTING			= 3  # 某個玩家猜測一個類別，等待其他人投票是否符合
+	
