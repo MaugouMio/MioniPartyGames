@@ -31,6 +31,7 @@ class User:
 			return False
 		return True
 
+
 class Player:
 	def __init__(self, user):
 		self.user = user
@@ -43,205 +44,454 @@ class Player:
 		self.success_round = 0
 		self.skipped_round = 0
 
+
+def new_packet(protocol, data):
+	packet = bytes()
+	packet += protocol.to_bytes(1, byteorder="little")
+	packet += len(data).to_bytes(4, byteorder="little")
+	packet += data
+	return packet
+
+
 class GameRoom:
-	def __init__(self, id):
-		self.room_id = id
+	def __init__(self, id, game_manager):
+		self._room_id = id
+		self._manager = game_manager
+		
 		self._user_ids = set()
+		self._players = dict()
+		self._countdown_timer = None
+		
+		self._reset_game()
 	
 	def __del__(self):
-		id_generator.release_room_id(self.room_id)
+		id_generator.release_room_id(self._room_id)
 	
 	@classmethod
-	def create(cls):
+	def create(cls, game_manager):
 		room_id = id_generator.generate_room_id()
 		if room_id < 0:
 			return None
-		return cls(room_id)
+		return cls(room_id, game_manager)
 	
 	def add_user(self, uid):
+		if uid in self._user_ids:
+			return
+		
 		self._user_ids.add(uid)
+		
+		self.send_init_packet(uid)
+		self.broadcast_connect(uid)
 	
 	def remove_user(self, uid):
+		if uid not in self._user_ids:
+			return
+		
+		self.remove_player(uid)
 		self._user_ids.remove(uid)
+		
+		self.broadcast_disconnect(uid)
 	
 	def is_empty(self):
 		return not self._user_ids
-
-class GameManager:
-	def __init__(self):
-		self.thread_lock = threading.Lock()
+	
+	def add_player(self, user):
+		if self._game_state != GAMESTATE.WAITING:
+			return
+		if user.uid in self._players:
+			return
 		
-		self.users = {}
-		self.rooms = {}
-		self.players = {}
-		self.countdown_timer = None
+		player = Player(user)
+		self._players[user.uid] = player
+		print(f"房間編號 {self.room_id} 使用者 {user.uid} 加入遊戲")
 		
-		self.reset_game()
+		self._stop_countdown()
+		self.broadcast_join(user.uid)
+	
+	def remove_player(self, uid):
+		if uid not in self._players:
+			return
+		
+		self._stop_countdown()
+		del self._players[uid]
+		print(f"房間編號 {self.room_id} 使用者 {uid} 退出遊戲")
+		
+		if self._game_state != GAMESTATE.WAITING:
+			if len(self._players) < 2:
+				self._reset_game()
+				self.broadcast_leave(uid)
+				self.broadcast_end(True)
+				return
+			
+			order_index = self._player_order.index(uid)
+			del self._player_order[order_index]
+			if order_index <= self._current_guessing_idx:
+				self._current_guessing_idx -= 1  # 後面要往回遞補
+				if order_index > self._current_guessing_idx:  # 當前猜題者離開，往後順延
+					self._advance_to_next_player()
+				else:
+					self.broadcast_player_order()
+		
+		if uid in self._votes:
+			del self._votes[uid]
+		
+		self._check_all_given_words()
+		self._check_all_votes()
+		self.broadcast_leave(uid)
 
-	def reset_game(self):
-		self.game_state = GAMESTATE.WAITING
-		self.current_round = 0
-		self.player_order = []
-		self.current_guessing_idx = 0
+	def request_start(self, uid):
+		if self._game_state != GAMESTATE.WAITING:
+			return
+		if uid not in self._players:
+			return
+		if len(self._players) < 2:
+			return
+		
+		self._start_countdown()
+		print(f"房間編號 {self.room_id} 使用者 {uid} 要求開始遊戲")
+
+	def request_cancel_start(self, uid):
+		if self._game_state != GAMESTATE.WAITING:
+			return
+		if uid not in self._players:
+			return
+		
+		self._stop_countdown()
+		print(f"房間編號 {self.room_id} 使用者 {uid} 取消開始遊戲倒數")
+	
+	def request_assign_question(self, uid, word, is_locked):
+		if self._game_state != GAMESTATE.PREPARING:
+			return
+		if uid not in self._players:
+			return
+		
+		next_player = self._players[self._player_order[(self._player_order.index(user.uid) + 1) % len(self._player_order)]]
+		# if next_player.question != "":
+			# return
+		
+		if word == "" or (word == next_player.question and is_locked == next_player.question_locked):
+			return
+		
+		next_player.question = word
+		next_player.question_locked = is_locked
+		if is_locked:
+			print(f"房間編號 {self.room_id} 使用者 {uid} 向 {next_player.user.uid} 出題：{word}")
+		else:
+			print(f"房間編號 {self.room_id} 使用者 {uid} 展示 {next_player.user.uid} 的題目：{word}")
+		self.broadcast_question(next_player)
+		
+		self._check_all_given_words()
+	
+	def request_guess(self, uid, guess):
+		if self._game_state != GAMESTATE.GUESSING:
+			return
+		if uid != self._player_order[self._current_guessing_idx]:
+			return
+		
+		player = self._players[uid]
+		
+		# 表示跳過
+		if not guess:
+			player.skipped_round += 1
+			self.broadcast_skip_guess(uid)
+			self._advance_to_next_player()
+			return
+		
+		if guess.lower() == player.question.lower():
+			player.success_round = self.current_round - player.skipped_round
+			self.broadcast_success(uid, player.success_round, guess)
+			self._advance_to_next_player()
+			return
+		
+		self.temp_guess = guess
+		self._votes.clear()
+		self._game_state = GAMESTATE.VOTING
+		print(f"房間編號 {self.room_id} 使用者 {uid} 猜題：{guess}")
+		
+		self.broadcast_guess()
+	
+	def request_vote(self, uid, vote):
+		if self._game_state != GAMESTATE.VOTING:
+			return
+		if vote < 0 or vote > 2:
+			return
+		if uid not in self._players:
+			return
+		if uid == self._player_order[self._current_guessing_idx]:
+			return
+		
+		self._votes[uid] = vote
+		print(f"房間編號 {self.room_id} 使用者 {uid} 進行投票：{vote}")
+		self.broadcast_vote(uid, vote)
+		self._check_all_votes()
+	
+	def request_give_up(self, uid):
+		if self._game_state != GAMESTATE.GUESSING:
+			return
+		if uid != self._player_order[self._current_guessing_idx]:
+			return
+		
+		player = self._players[uid]
+		player.success_round = -1
+		self.broadcast_success(uid, -1, player.question)
+		self._advance_to_next_player()
+
+	def _start_countdown(self):
+		if self._countdown_timer:
+			return
+		
+		self._countdown_timer = threading.Timer(CONST.START_COUNTDOWN_DURATION, self._start_game)
+		self._countdown_timer.start()
+		self.broadcast_start_countdown()
+	
+	def _stop_countdown(self):
+		if not self._countdown_timer:
+			return
+		
+		self._countdown_timer.cancel()
+		self._countdown_timer = None
+		self.broadcast_start_countdown(is_stop=True)
+
+	def _start_game(self):
+		"""開始遊戲，設定玩家順序並要求出題。"""
+		with self._manager.thread_lock:
+			self._countdown_timer = None
+			
+			self._reset_game()
+			self._current_round = 1
+			self._game_state = GAMESTATE.PREPARING
+			
+			self._player_order = list(self._players.keys())
+			random.shuffle(self._player_order)
+			self._current_guessing_idx = 0
+			
+			self.broadcast_player_order(include_list=True)
+			self.broadcast_start()
+
+	def _reset_game(self):
+		self._game_state = GAMESTATE.WAITING
+		self._current_round = 0
+		self._player_order = []
+		self._current_guessing_idx = 0
+		self._votes = {}
+		
 		self.temp_guess = ""
-		self.votes = {}
-		for player in self.players.values():
+		
+		for player in self._players.values():
 			player.reset()
 
-	def new_packet(self, protocol, data):
-		packet = bytes()
-		packet += protocol.to_bytes(1, byteorder='little')
-		packet += len(data).to_bytes(4, byteorder='little')
-		packet += data
-		return packet
+	def _check_all_given_words(self):
+		"""檢查是否所有玩家都已出題。"""
+		if self._game_state != GAMESTATE.PREPARING:
+			return
+		if any(player.question_locked == False for player in self._players.values()):
+			return
+		
+		self._game_state = GAMESTATE.GUESSING
+		self.broadcast_game_state()
 
-	def broadcast(self, packet, exclude_client=None):
+	def _check_all_votes(self):
+		"""檢查是否所有玩家都已投票。"""
+		if self._game_state != GAMESTATE.VOTING:
+			return
+		if len(self._votes) < len(self._players) - 1:
+			return
+		
+		yes_votes = 0
+		no_votes = 0
+		abstain_votes = 0
+		for vote in self._votes.values():
+			if vote == 1:
+				yes_votes += 1
+			elif vote == 2:
+				no_votes += 1
+			else:
+				abstain_votes += 1
+		
+		if yes_votes == no_votes:
+			self._current_guessing_idx -= 1  # 無效投票，讓玩家再猜一個類型
+			self.broadcast_guess_again()
+		else:
+			guessing_player_uid = self._player_order[self._current_guessing_idx]
+			result = 1 if yes_votes > no_votes else 0
+			self._players[guessing_player_uid].guess_history.append((self.temp_guess, result))
+			self.broadcast_guess_record(guessing_player_uid, self.temp_guess, result)
+
+		self._advance_to_next_player()
+
+	def _advance_to_next_player(self):
+		"""移動到下一個需要猜測的玩家。"""
+		self.temp_guess = ""
+		
+		for i in range(len(self._player_order)):
+			self._current_guessing_idx += 1
+			if self._current_guessing_idx >= len(self._player_order):
+				self._current_round += 1
+				self._current_guessing_idx = 0
+			
+			next_uid = self._player_order[self._current_guessing_idx]
+			# 跳過已經猜出的玩家
+			if self._players[next_uid].success_round != 0:
+				continue
+			
+			self._game_state = GAMESTATE.GUESSING
+			
+			self.broadcast_player_order()
+			self.broadcast_game_state()
+			return
+		
+		# 所有人都猜出來了
+		self._reset_game()
+		self.broadcast_end()
+	
+	# server messages ===========================================================================
+
+	def send_init_packet(self, uid):
+		user = self._manager.get_user(uid)
+		
+		data = bytes()
+		data += uid.to_bytes(2, byteorder="little")
+		data += user.room_id.to_bytes(4, byteorder="little")
+		# 使用者列表
+		data += len(self._user_ids).to_bytes(1, byteorder="little")
+		for user_id in self._user_ids:
+			user = self._manager.get_user(user_id)
+			data += user_id.to_bytes(2, byteorder="little")
+			encoded_name = user.name.encode("utf8")
+			data += len(encoded_name).to_bytes(1, byteorder="little")
+			data += encoded_name
+		# 玩家列表
+		data += len(self._players).to_bytes(1, byteorder="little")
+		for player in self._players.values():
+			data += player.user.uid.to_bytes(2, byteorder="little")
+			encoded_question = player.question.encode("utf8")
+			data += len(encoded_question).to_bytes(1, byteorder="little")
+			data += encoded_question
+			data += len(player.guess_history).to_bytes(1, byteorder="little")
+			for guess in player.guess_history:
+				encoded_guess = guess[0].encode("utf8")
+				data += len(encoded_guess).to_bytes(1, byteorder="little")
+				data += encoded_guess
+				data += guess[1].to_bytes(1, byteorder="little")
+			data += player.success_round.to_bytes(2, signed=True, byteorder="little")
+		# 遊戲階段
+		data += self._game_state.to_bytes(1, byteorder="little")
+		# 玩家順序
+		data += len(self._player_order).to_bytes(1, byteorder="little")
+		for player_uid in self._player_order:
+			data += player_uid.to_bytes(2, byteorder="little")
+		data += self._current_guessing_idx.to_bytes(1, byteorder="little")
+		# 投票狀況
+		encoded_guess = self.temp_guess.encode("utf8")
+		data += len(encoded_guess).to_bytes(1, byteorder="little")
+		data += encoded_guess
+		
+		data += len(self._votes).to_bytes(1, byteorder="little")
+		for vote_uid, vote in self._votes.items():
+			data += vote_uid.to_bytes(2, byteorder="little")
+			data += vote.to_bytes(1, byteorder="little")
+		
+		packet = new_packet(PROTOCOL_SERVER.INIT, data)
+		try:
+			user.socket.sendall(packet)
+		except:
+			pass
+
+	def _broadcast(self, packet, exclude_client=None):
 		"""廣播訊息給所有已連線的客戶端。"""
-		user_list = list(self.users.items())
-		for uid, user in user_list:
+		disconnected_users = []
+		for uid in self._user_ids:
 			if uid != exclude_client:
+				user = self._manager.get_user(uid)
 				try:
 					user.socket.sendall(packet)
 				except:
-					self.remove_user(user)
-
-	def send_init_packet(self, uid):
-		data = bytes()
-		data += uid.to_bytes(2, byteorder='little')
-		# 使用者列表
-		data += len(self.users).to_bytes(1, byteorder='little')
-		for user in self.users.values():
-			data += user.uid.to_bytes(2, byteorder='little')
-			encoded_name = user.name.encode('utf8')
-			data += len(encoded_name).to_bytes(1, byteorder='little')
-			data += encoded_name
-		# 玩家列表
-		data += len(self.players).to_bytes(1, byteorder='little')
-		for player in self.players.values():
-			data += player.user.uid.to_bytes(2, byteorder='little')
-			encoded_question = player.question.encode('utf8')
-			data += len(encoded_question).to_bytes(1, byteorder='little')
-			data += encoded_question
-			data += len(player.guess_history).to_bytes(1, byteorder='little')
-			for guess in player.guess_history:
-				encoded_guess = guess[0].encode('utf8')
-				data += len(encoded_guess).to_bytes(1, byteorder='little')
-				data += encoded_guess
-				data += guess[1].to_bytes(1, byteorder='little')
-			data += player.success_round.to_bytes(2, signed=True, byteorder='little')
-		# 遊戲階段
-		data += self.game_state.to_bytes(1, byteorder='little')
-		# 玩家順序
-		data += len(self.player_order).to_bytes(1, byteorder='little')
-		for player_uid in self.player_order:
-			data += player_uid.to_bytes(2, byteorder='little')
-		data += self.current_guessing_idx.to_bytes(1, byteorder='little')
-		# 投票狀況
-		encoded_guess = self.temp_guess.encode('utf8')
-		data += len(encoded_guess).to_bytes(1, byteorder='little')
-		data += encoded_guess
+					disconnected_users.append(user)
 		
-		data += len(self.votes).to_bytes(1, byteorder='little')
-		for vote_uid, vote in self.votes.items():
-			data += vote_uid.to_bytes(2, byteorder='little')
-			data += vote.to_bytes(1, byteorder='little')
-		
-		packet = self.new_packet(PROTOCOL_SERVER.INIT, data)
-		user = self.users[uid]
-		try:
-			user.socket.sendall(packet)
-		except:
-			pass
-	
-	def send_version_check_result(self, uid):
-		packet = self.new_packet(PROTOCOL_SERVER.VERSION, CONST.GAME_VERSION.to_bytes(4, byteorder='little'))
-		user = self.users[uid]
-		try:
-			user.socket.sendall(packet)
-		except:
-			pass
+		for user in disconnected_users:
+			self._manager.remove_user(user)
 	
 	def broadcast_connect(self, uid):
-		packet = self.new_packet(PROTOCOL_SERVER.CONNECT, uid.to_bytes(2, byteorder='little'))
-		self.broadcast(packet, exclude_client=uid)
+		packet = new_packet(PROTOCOL_SERVER.CONNECT, uid.to_bytes(2, byteorder="little"))
+		self._broadcast(packet, exclude_client=uid)
 	
 	def broadcast_disconnect(self, uid):
-		packet = self.new_packet(PROTOCOL_SERVER.DISCONNECT, uid.to_bytes(2, byteorder='little'))
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.DISCONNECT, uid.to_bytes(2, byteorder="little"))
+		self._broadcast(packet)
 	
 	def broadcast_rename(self, uid, name):
 		data = bytes()
-		data += uid.to_bytes(2, byteorder='little')
-		encoded_name = name.encode('utf8')
-		data += len(encoded_name).to_bytes(1, byteorder='little')
+		data += uid.to_bytes(2, byteorder="little")
+		encoded_name = name.encode("utf8")
+		data += len(encoded_name).to_bytes(1, byteorder="little")
 		data += encoded_name
 		
-		packet = self.new_packet(PROTOCOL_SERVER.NAME, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.NAME, data)
+		self._broadcast(packet)
 	
 	def broadcast_join(self, uid):
 		data = bytes()
-		data += uid.to_bytes(2, byteorder='little')
+		data += uid.to_bytes(2, byteorder="little")
 		
-		packet = self.new_packet(PROTOCOL_SERVER.JOIN, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.JOIN, data)
+		self._broadcast(packet)
 	
 	def broadcast_leave(self, uid):
 		data = bytes()
-		data += uid.to_bytes(2, byteorder='little')
+		data += uid.to_bytes(2, byteorder="little")
 		
-		packet = self.new_packet(PROTOCOL_SERVER.LEAVE, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.LEAVE, data)
+		self._broadcast(packet)
 	
 	def broadcast_start_countdown(self, is_stop = False):
 		data = bytes()
 		if is_stop:
-			data += int(0).to_bytes(1, byteorder='little')
+			data += int(0).to_bytes(1, byteorder="little")
 		else:
-			data += int(1).to_bytes(1, byteorder='little')
-			data += CONST.START_COUNTDOWN_DURATION.to_bytes(1, byteorder='little')
+			data += int(1).to_bytes(1, byteorder="little")
+			data += CONST.START_COUNTDOWN_DURATION.to_bytes(1, byteorder="little")
 		
-		packet = self.new_packet(PROTOCOL_SERVER.START_COUNTDOWN, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.START_COUNTDOWN, data)
+		self._broadcast(packet)
 	
 	def broadcast_start(self):
-		packet = self.new_packet(PROTOCOL_SERVER.START, bytes())
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.START, bytes())
+		self._broadcast(packet)
 	
 	def broadcast_game_state(self):
-		packet = self.new_packet(PROTOCOL_SERVER.GAMESTATE, self.game_state.to_bytes(1, byteorder='little'))
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.GAMESTATE, self._game_state.to_bytes(1, byteorder="little"))
+		self._broadcast(packet)
 	
 	def broadcast_player_order(self, include_list = False):
 		data = bytes()
-		data += self.current_guessing_idx.to_bytes(1, byteorder='little')
+		data += self._current_guessing_idx.to_bytes(1, byteorder="little")
 		if include_list:
-			data += int(1).to_bytes(1, byteorder='little')
-			data += len(self.player_order).to_bytes(1, byteorder='little')
-			for uid in self.player_order:
-				data += uid.to_bytes(2, byteorder='little')
+			data += int(1).to_bytes(1, byteorder="little")
+			data += len(self._player_order).to_bytes(1, byteorder="little")
+			for uid in self._player_order:
+				data += uid.to_bytes(2, byteorder="little")
 		else:
-			data += int(0).to_bytes(1, byteorder='little')
+			data += int(0).to_bytes(1, byteorder="little")
 		
-		packet = self.new_packet(PROTOCOL_SERVER.PLAYER_ORDER, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.PLAYER_ORDER, data)
+		self._broadcast(packet)
 	
 	def broadcast_question(self, player):
 		data = bytes()
-		data += player.user.uid.to_bytes(2, byteorder='little')
-		data += (1 if player.question_locked else 0).to_bytes(1, byteorder='little')
-		encoded_question = player.question.encode('utf8')
-		data += len(encoded_question).to_bytes(1, byteorder='little')
+		data += player.user.uid.to_bytes(2, byteorder="little")
+		data += (1 if player.question_locked else 0).to_bytes(1, byteorder="little")
+		encoded_question = player.question.encode("utf8")
+		data += len(encoded_question).to_bytes(1, byteorder="little")
 		data += encoded_question
 		
-		packet = self.new_packet(PROTOCOL_SERVER.QUESTION, data)
-		self.broadcast(packet, exclude_client=player.user.uid)
+		packet = new_packet(PROTOCOL_SERVER.QUESTION, data)
+		self._broadcast(packet, exclude_client=player.user.uid)
 		
 		# 傳給玩家本身的資訊不含題目，只做提示已經出好題了
 		data = bytes()
-		data += player.user.uid.to_bytes(2, byteorder='little')
-		data += (1 if player.question_locked else 0).to_bytes(1, byteorder='little')
-		packet = self.new_packet(PROTOCOL_SERVER.QUESTION, data)
+		data += player.user.uid.to_bytes(2, byteorder="little")
+		data += (1 if player.question_locked else 0).to_bytes(1, byteorder="little")
+		packet = new_packet(PROTOCOL_SERVER.QUESTION, data)
 		try:
 			player.user.socket.sendall(packet)
 		except:
@@ -249,77 +499,93 @@ class GameManager:
 	
 	def broadcast_success(self, uid, success_round, answer):
 		data = bytes()
-		data += uid.to_bytes(2, byteorder='little')
-		data += success_round.to_bytes(2, signed=True, byteorder='little')
+		data += uid.to_bytes(2, byteorder="little")
+		data += success_round.to_bytes(2, signed=True, byteorder="little")
 		
-		encoded_answer = answer.encode('utf8')
-		data += len(encoded_answer).to_bytes(1, byteorder='little')
+		encoded_answer = answer.encode("utf8")
+		data += len(encoded_answer).to_bytes(1, byteorder="little")
 		data += encoded_answer
 		
-		packet = self.new_packet(PROTOCOL_SERVER.SUCCESS, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.SUCCESS, data)
+		self._broadcast(packet)
 	
 	def broadcast_guess(self):
 		data = bytes()
-		encoded_guess = self.temp_guess.encode('utf8')
-		data += len(encoded_guess).to_bytes(1, byteorder='little')
+		encoded_guess = self.temp_guess.encode("utf8")
+		data += len(encoded_guess).to_bytes(1, byteorder="little")
 		data += encoded_guess
 		
-		packet = self.new_packet(PROTOCOL_SERVER.GUESS, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.GUESS, data)
+		self._broadcast(packet)
 	
 	def broadcast_vote(self, uid, vote):
 		data = bytes()
-		data += uid.to_bytes(2, byteorder='little')
-		data += vote.to_bytes(1, byteorder='little')
+		data += uid.to_bytes(2, byteorder="little")
+		data += vote.to_bytes(1, byteorder="little")
 		
-		packet = self.new_packet(PROTOCOL_SERVER.VOTE, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.VOTE, data)
+		self._broadcast(packet)
 	
 	def broadcast_guess_again(self):
-		packet = self.new_packet(PROTOCOL_SERVER.GUESS_AGAIN, bytes())
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.GUESS_AGAIN, bytes())
+		self._broadcast(packet)
 	
 	def broadcast_guess_record(self, uid, guess, result):
 		data = bytes()
-		data += uid.to_bytes(2, byteorder='little')
+		data += uid.to_bytes(2, byteorder="little")
 		
-		encoded_guess = guess.encode('utf8')
-		data += len(encoded_guess).to_bytes(1, byteorder='little')
+		encoded_guess = guess.encode("utf8")
+		data += len(encoded_guess).to_bytes(1, byteorder="little")
 		data += encoded_guess
 		
-		data += result.to_bytes(1, byteorder='little')
+		data += result.to_bytes(1, byteorder="little")
 		
-		packet = self.new_packet(PROTOCOL_SERVER.GUESS_RECORD, data)
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.GUESS_RECORD, data)
+		self._broadcast(packet)
 	
 	def broadcast_end(self, is_force = False):
 		end_type = 1 if is_force else 0
-		packet = self.new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder='little'))
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder="little"))
+		self._broadcast(packet)
 	
 	def broadcast_chat(self, uid, encoded_message, is_hidden):
 		data = bytes()
-		data += uid.to_bytes(2, byteorder='little')
+		data += uid.to_bytes(2, byteorder="little")
 		
-		data += len(encoded_message).to_bytes(1, byteorder='little')
+		data += len(encoded_message).to_bytes(1, byteorder="little")
 		data += encoded_message
 		
 		exclude_client = None
 		if is_hidden:
-			if self.game_state == GAMESTATE.GUESSING or self.game_state == GAMESTATE.VOTING:
-				exclude_client = self.player_order[self.current_guessing_idx]
+			if self._game_state == GAMESTATE.GUESSING or self._game_state == GAMESTATE.VOTING:
+				exclude_client = self._player_order[self._current_guessing_idx]
 		if exclude_client == None:
-			data += int(0).to_bytes(1, byteorder='little')
+			data += int(0).to_bytes(1, byteorder="little")
 		else:
-			data += int(1).to_bytes(1, byteorder='little')
+			data += int(1).to_bytes(1, byteorder="little")
 		
-		packet = self.new_packet(PROTOCOL_SERVER.CHAT, data)
-		self.broadcast(packet, exclude_client)
+		packet = new_packet(PROTOCOL_SERVER.CHAT, data)
+		self._broadcast(packet, exclude_client)
 	
 	def broadcast_skip_guess(self, uid):
-		packet = self.new_packet(PROTOCOL_SERVER.SKIP_GUESS, uid.to_bytes(2, byteorder='little'))
-		self.broadcast(packet)
+		packet = new_packet(PROTOCOL_SERVER.SKIP_GUESS, uid.to_bytes(2, byteorder="little"))
+		self._broadcast(packet)
+
+
+class GameManager:
+	def __init__(self):
+		self.thread_lock = threading.Lock()
+		
+		self.users = {}
+		self.rooms = {}
+	
+	def _send_version_check_result(self, uid):
+		packet = new_packet(PROTOCOL_SERVER.VERSION, CONST.GAME_VERSION.to_bytes(4, byteorder="little"))
+		user = self.users[uid]
+		try:
+			user.socket.sendall(packet)
+		except:
+			pass
 	
 	def handle_client(self, conn, addr):
 		"""處理單一客戶端的連線。"""
@@ -332,10 +598,6 @@ class GameManager:
 			
 			self.users[uid] = user
 			print(f"新連線：{uid} ({addr})")
-			
-			# 傳送初始資料封包
-			self.send_init_packet(uid)
-			self.broadcast_connect(uid)
 		
 		try:
 			while True:
@@ -344,7 +606,7 @@ class GameManager:
 					break
 					
 				protocol = header[0]
-				packet_size = int.from_bytes(header[1:5], byteorder='little')
+				packet_size = int.from_bytes(header[1:5], byteorder="little")
 				
 				data = bytes()
 				is_disconnected = False
@@ -362,7 +624,7 @@ class GameManager:
 					break
 				
 				with self.thread_lock:
-					self.process_message(user, protocol, data)
+					self._process_message(user, protocol, data)
 		except Exception as e:
 			print(traceback.format_exc())
 			print(f"{uid} ({addr}) 連線中斷")
@@ -370,16 +632,15 @@ class GameManager:
 			with self.thread_lock:
 				self.remove_user(user)
 				conn.close()
-				self.broadcast_disconnect(uid)
 
-	def process_message(self, user, protocol, message):
+	def _process_message(self, user, protocol, message):
 		"""處理來自客戶端的訊息。"""
 		if protocol == PROTOCOL_CLIENT.VERSION:
 			if user.version_checked:
 				return
 			
-			version = int.from_bytes(message, byteorder='little')
-			self.send_version_check_result(user.uid)
+			version = int.from_bytes(message, byteorder="little")
+			self._send_version_check_result(user.uid)
 			if version != CONST.GAME_VERSION:
 				user.socket.close()
 				return
@@ -391,313 +652,120 @@ class GameManager:
 			if len(message) > 255:
 				return
 			
-			new_name = message.decode('utf8').strip()
+			new_name = message.decode("utf8").strip()
 			if new_name == user.name:
 				return
 			
 			user.name = new_name
 			print(f"使用者 {user.uid} 設定名稱為 {new_name}")
 			
-			self.broadcast_rename(user.uid, new_name)
+			if user.room_id >= 0:
+				room = self.rooms.get(room_id)
+				if room:
+					room.broadcast_rename(user.uid, new_name)
 		elif protocol == PROTOCOL_CLIENT.CREATE_ROOM:
 			if not user.check_version():
 				return
 			if user.room_id >= 0:
 				return
 			
-			room = GameRoom.create()
+			room = GameRoom.create(self)
 			if room == None:
 				# TODO: 回傳房間數量過多無法創建訊息
 				return
 			
 			room.add_user(user.uid)
 			self.rooms[room.room_id] = room
-			# TODO: 回傳房間資訊
 		elif protocol == PROTOCOL_CLIENT.JOIN_ROOM:
 			if not user.check_version():
 				return
 			if user.room_id >= 0:
 				return
 			
-			room_id = int.from_bytes(message, byteorder='little')
+			room_id = int.from_bytes(message, byteorder="little")
 			room = self.rooms.get(room_id)
 			if room == None:
 				return
 			
 			room.add_user(user.uid)
-			# TODO: 回傳房間資訊
 		elif protocol == PROTOCOL_CLIENT.LEAVE_ROOM:
-			if not user.check_version():
-				return
 			if user.room_id < 0:
 				return
 			
 			self.user_leave_room(user)
 			user.room_id = -1
-			# TODO: 回傳離開房間
-		elif protocol == PROTOCOL_CLIENT.JOIN:
-			if not user.check_version():
-				return
-			if self.game_state != GAMESTATE.WAITING:
-				return
-			if user.uid in self.players:
+		elif protocol == PROTOCOL_CLIENT.JOIN_GAME:
+			if user.room_id < 0:
 				return
 			
-			player = Player(user)
-			self.players[user.uid] = player
-			print(f"使用者 {user.uid} 加入遊戲")
-			
-			self.stop_countdown()
-			self.broadcast_join(user.uid)
-		elif protocol == PROTOCOL_CLIENT.LEAVE:
-			if not user.check_version():
+			room = self.rooms[user.room_id]
+			room.add_player(user)
+		elif protocol == PROTOCOL_CLIENT.LEAVE_GAME:
+			if user.room_id < 0:
 				return
-			self.remove_player(user.uid)
-			print(f"使用者 {user.uid} 退出遊戲")
+			
+			room = self.rooms[user.room_id]
+			room.remove_player(user.uid)
 		elif protocol == PROTOCOL_CLIENT.START:
-			if not user.check_version():
-				return
-			if self.game_state != GAMESTATE.WAITING:
-				return
-			if user.uid not in self.players:
-				return
-			if len(self.players) < 2:
+			if user.room_id < 0:
 				return
 			
-			self.start_countdown()
-			print(f"使用者 {user.uid} 要求開始遊戲")
+			room = self.rooms[user.room_id]
+			room.request_start(user.uid)
 		elif protocol == PROTOCOL_CLIENT.CANCEL_START:
-			if not user.check_version():
-				return
-			if self.game_state != GAMESTATE.WAITING:
-				return
-			if user.uid not in self.players:
+			if user.room_id < 0:
 				return
 			
-			self.stop_countdown()
-			print(f"使用者 {user.uid} 取消開始遊戲倒數")
+			room = self.rooms[user.room_id]
+			room.request_cancel_start(user.uid)
 		elif protocol == PROTOCOL_CLIENT.QUESTION:
-			if not user.check_version():
+			if user.room_id < 0:
 				return
-			if self.game_state != GAMESTATE.PREPARING:
-				return
-			if len(message) > 255:
-				return
-			if user.uid not in self.players:
+			if len(message) > 256:
 				return
 			
-			next_player = self.players[self.player_order[(self.player_order.index(user.uid) + 1) % len(self.player_order)]]
-			# if next_player.question != "":
-				# return
+			room = self.rooms[user.room_id]
 			
 			is_locked = message[0] == 1
-			word = message[1:].decode('utf8').strip()
-			if word == "" or (word == next_player.question and is_locked == next_player.question_locked):
-				return
-			
-			next_player.question = word
-			next_player.question_locked = is_locked
-			if is_locked:
-				print(f"使用者 {user.uid} 向 {next_player.user.uid} 出題：{word}")
-			else:
-				print(f"使用者 {user.uid} 展示 {next_player.user.uid} 的題目：{word}")
-			self.broadcast_question(next_player)
-			
-			self.check_all_given_words()
+			word = message[1:].decode("utf8").strip()
+			room.request_assign_question(user.uid, word, is_locked)
 		elif protocol == PROTOCOL_CLIENT.GUESS:
-			if not user.check_version():
-				return
-			if self.game_state != GAMESTATE.GUESSING:
+			if user.room_id < 0:
 				return
 			if len(message) > 255:
 				return
-			if user.uid != self.player_order[self.current_guessing_idx]:
-				return
 			
-			player = self.players[user.uid]
+			room = self.rooms[user.room_id]
 			
-			# 表示跳過
-			if len(message) == 0:
-				player.skipped_round += 1
-				self.broadcast_skip_guess(user.uid)
-				self.advance_to_next_player()
-				return
-			
-			guess = message.decode('utf8').strip()
-			if guess.lower() == player.question.lower():
-				player.success_round = self.current_round - player.skipped_round
-				self.broadcast_success(user.uid, player.success_round, guess)
-				self.advance_to_next_player()
-				return
-			
-			self.temp_guess = guess
-			self.votes.clear()
-			self.game_state = GAMESTATE.VOTING
-			print(f"使用者 {user.uid} 猜題：{guess}")
-			
-			self.broadcast_guess()
+			guess = message.decode("utf8").strip()
+			room.request_guess(user.uid, guess)
 		elif protocol == PROTOCOL_CLIENT.VOTE:
-			if not user.check_version():
-				return
-			if self.game_state != GAMESTATE.VOTING:
-				return
-			if user.uid not in self.players:
-				return
-			if user.uid == self.player_order[self.current_guessing_idx]:
+			if user.room_id < 0:
 				return
 			
-			vote = int.from_bytes(message, byteorder='little')
-			if vote < 0 or vote > 2:
-				return
+			room = self.rooms[user.room_id]
 			
-			self.votes[user.uid] = vote
-			print(f"使用者 {user.uid} 進行投票：{vote}")
-			self.broadcast_vote(user.uid, vote)
-			self.check_all_votes()
+			vote = int.from_bytes(message, byteorder="little")
+			room.request_vote(user.uid, vote)
 		elif protocol == PROTOCOL_CLIENT.CHAT:
-			if not user.check_version():
+			if user.room_id < 0:
 				return
+			if len(message) > 256:
+				return
+			
+			room = self.rooms[user.room_id]
+			
 			is_hidden = message[0] == 1
-			self.broadcast_chat(user.uid, message[1:], is_hidden)
+			room.broadcast_chat(user.uid, message[1:], is_hidden)
 		elif protocol == PROTOCOL_CLIENT.GIVE_UP:
-			if not user.check_version():
-				return
-			if self.game_state != GAMESTATE.GUESSING:
-				return
-			if user.uid not in self.players:
-				return
-			if user.uid != self.player_order[self.current_guessing_idx]:
+			if user.room_id < 0:
 				return
 			
-			player = self.players[user.uid]
-			player.success_round = -1
-			self.broadcast_success(user.uid, -1, player.question)
-			self.advance_to_next_player()
-
-	def start_countdown(self):
-		if self.countdown_timer:
-			return
-		
-		self.countdown_timer = threading.Timer(CONST.START_COUNTDOWN_DURATION, self.start_game)
-		self.countdown_timer.start()
-		self.broadcast_start_countdown()
+			room = self.rooms[user.room_id]
+			room.request_give_up(user.uid)
 	
-	def stop_countdown(self):
-		if not self.countdown_timer:
-			return
-		
-		self.countdown_timer.cancel()
-		self.countdown_timer = None
-		self.broadcast_start_countdown(is_stop=True)
-
-	def start_game(self):
-		"""開始遊戲，設定玩家順序並要求出題。"""
-		with self.thread_lock:
-			self.countdown_timer = None
-			
-			self.reset_game()
-			self.current_round = 1
-			self.game_state = GAMESTATE.PREPARING
-			
-			self.player_order = list(self.players.keys())
-			random.shuffle(self.player_order)
-			self.current_guessing_idx = 0
-			
-			self.broadcast_player_order(include_list=True)
-			self.broadcast_start()
-
-	def check_all_given_words(self):
-		"""檢查是否所有玩家都已出題。"""
-		if self.game_state != GAMESTATE.PREPARING:
-			return
-		if any(player.question_locked == False for player in self.players.values()):
-			return
-		
-		self.game_state = GAMESTATE.GUESSING
-		self.broadcast_game_state()
-
-	def check_all_votes(self):
-		"""檢查是否所有玩家都已投票。"""
-		if self.game_state != GAMESTATE.VOTING:
-			return
-		if len(self.votes) < len(self.players) - 1:
-			return
-		
-		yes_votes = 0
-		no_votes = 0
-		abstain_votes = 0
-		for vote in self.votes.values():
-			if vote == 1:
-				yes_votes += 1
-			elif vote == 2:
-				no_votes += 1
-			else:
-				abstain_votes += 1
-		
-		if yes_votes == no_votes:
-			self.current_guessing_idx -= 1  # 無效投票，讓玩家再猜一個類型
-			self.broadcast_guess_again()
-		else:
-			guessing_player_uid = self.player_order[self.current_guessing_idx]
-			result = 1 if yes_votes > no_votes else 0
-			self.players[guessing_player_uid].guess_history.append((self.temp_guess, result))
-			self.broadcast_guess_record(guessing_player_uid, self.temp_guess, result)
-
-		self.advance_to_next_player()
-
-	def advance_to_next_player(self):
-		"""移動到下一個需要猜測的玩家。"""
-		self.temp_guess = ""
-		
-		for i in range(len(self.player_order)):
-			self.current_guessing_idx += 1
-			if self.current_guessing_idx >= len(self.player_order):
-				self.current_round += 1
-				self.current_guessing_idx = 0
-			
-			next_uid = self.player_order[self.current_guessing_idx]
-			# 跳過已經猜出的玩家
-			if self.players[next_uid].success_round != 0:
-				continue
-			
-			self.game_state = GAMESTATE.GUESSING
-			
-			self.broadcast_player_order()
-			self.broadcast_game_state()
-			return
-		
-		# 所有人都猜出來了
-		self.reset_game()
-		self.broadcast_end()
-	
-	def remove_player(self, uid):
-		if uid not in self.players:
-			return
-		
-		self.stop_countdown()
-		del self.players[uid]
-		if self.game_state != GAMESTATE.WAITING:
-			if len(self.players) < 2:
-				self.reset_game()
-				self.broadcast_leave(uid)
-				self.broadcast_end(True)
-				return
-			
-			order_index = self.player_order.index(uid)
-			del self.player_order[order_index]
-			if order_index <= self.current_guessing_idx:
-				self.current_guessing_idx -= 1  # 後面要往回遞補
-				if order_index > self.current_guessing_idx:  # 當前猜題者離開，往後順延
-					self.advance_to_next_player()
-				else:
-					self.broadcast_player_order()
-		
-		if uid in self.votes:
-			del self.votes[uid]
-		
-		self.check_all_given_words()
-		self.check_all_votes()
-		self.broadcast_leave(uid)
+	def get_user(self, uid):
+		return self.users.get(uid)
 	
 	def user_leave_room(self, user):
 		room = self.rooms.get(user.room_id)

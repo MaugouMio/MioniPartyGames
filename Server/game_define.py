@@ -4,8 +4,8 @@ class CONST:
 
 class PROTOCOL_CLIENT:
 	NAME			= 0
-	JOIN			= 1
-	LEAVE			= 2
+	JOIN_GAME		= 1
+	LEAVE_GAME		= 2
 	START			= 3
 	CANCEL_START	= 4
 	QUESTION		= 5
