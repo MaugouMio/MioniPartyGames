@@ -43,11 +43,36 @@ class Player:
 		self.success_round = 0
 		self.skipped_round = 0
 
+class GameRoom:
+	def __init__(self, id):
+		self.room_id = id
+		self._user_ids = set()
+	
+	def __del__(self):
+		id_generator.release_room_id(self.room_id)
+	
+	@classmethod
+	def create(cls):
+		room_id = id_generator.generate_room_id()
+		if room_id < 0:
+			return None
+		return cls(room_id)
+	
+	def add_user(self, uid):
+		self._user_ids.add(uid)
+	
+	def remove_user(self, uid):
+		self._user_ids.remove(uid)
+	
+	def is_empty(self):
+		return not self._user_ids
+
 class GameManager:
 	def __init__(self):
 		self.thread_lock = threading.Lock()
 		
 		self.users = {}
+		self.rooms = {}
 		self.players = {}
 		self.countdown_timer = None
 		
@@ -78,7 +103,7 @@ class GameManager:
 				try:
 					user.socket.sendall(packet)
 				except:
-					self.remove_user(uid)
+					self.remove_user(user)
 
 	def send_init_packet(self, uid):
 		data = bytes()
@@ -343,7 +368,7 @@ class GameManager:
 			print(f"{uid} ({addr}) 連線中斷")
 		finally:
 			with self.thread_lock:
-				self.remove_user(uid)
+				self.remove_user(user)
 				conn.close()
 				self.broadcast_disconnect(uid)
 
@@ -374,6 +399,42 @@ class GameManager:
 			print(f"使用者 {user.uid} 設定名稱為 {new_name}")
 			
 			self.broadcast_rename(user.uid, new_name)
+		elif protocol == PROTOCOL_CLIENT.CREATE_ROOM:
+			if not user.check_version():
+				return
+			if user.room_id >= 0:
+				return
+			
+			room = GameRoom.create()
+			if room == None:
+				# TODO: 回傳房間數量過多無法創建訊息
+				return
+			
+			room.add_user(user.uid)
+			self.rooms[room.room_id] = room
+			# TODO: 回傳房間資訊
+		elif protocol == PROTOCOL_CLIENT.JOIN_ROOM:
+			if not user.check_version():
+				return
+			if user.room_id >= 0:
+				return
+			
+			room_id = int.from_bytes(message, byteorder='little')
+			room = self.rooms.get(room_id)
+			if room == None:
+				return
+			
+			room.add_user(user.uid)
+			# TODO: 回傳房間資訊
+		elif protocol == PROTOCOL_CLIENT.LEAVE_ROOM:
+			if not user.check_version():
+				return
+			if user.room_id < 0:
+				return
+			
+			self.user_leave_room(user)
+			user.room_id = -1
+			# TODO: 回傳離開房間
 		elif protocol == PROTOCOL_CLIENT.JOIN:
 			if not user.check_version():
 				return
@@ -637,13 +698,23 @@ class GameManager:
 		self.check_all_given_words()
 		self.check_all_votes()
 		self.broadcast_leave(uid)
+	
+	def user_leave_room(self, user):
+		room = self.rooms.get(user.room_id)
+		if room:
+			room.remove_user(user.uid)
+			print(f"玩家 {user.uid} 已離開房間 {user.room_id}")
+			if room.is_empty():
+				del self.rooms[user.room_id]
+				print(f"已移除空房間 {user.room_id}")
 
-	def remove_user(self, uid):
+	def remove_user(self, user):
 		"""移除斷線的使用者"""
-		self.remove_player(uid)
-		if uid in self.users:
-			print(f"玩家 {self.users[uid].name} ({uid}) 已移除")
-			del self.users[uid]
+		self.remove_player(user.uid)
+		if user.room_id >= 0:
+			self.user_leave_room(user)
+		del self.users[user.uid]
+		print(f"玩家 {user.name} ({user.uid}) 已移除")
 
 def main():
 	HOST = '127.0.0.1'
