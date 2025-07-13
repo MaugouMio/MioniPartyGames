@@ -21,13 +21,13 @@ class _SerialIDGenerator:
 	def release(self, id):
 		heapq.heappush(self._free_id_list, id)
 
-_player_uid_generator = _SerialIDGenerator(0xffff)
+_user_id_generator = _SerialIDGenerator(0xffff)
 
-def generate_player_uid():
-	return _player_uid_generator.generate()
+def generate_user_id():
+	return _user_id_generator.generate()
 
-def release_player_uid(uid):
-	_player_uid_generator.release(uid)
+def release_user_id(id):
+	_user_id_generator.release(id)
 
 
 class _RandomIDGenerator:

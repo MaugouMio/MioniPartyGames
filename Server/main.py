@@ -13,6 +13,17 @@ class User:
 		self.uid = id
 		self.name = ""
 		self.version_checked = False
+		self.room_id = -1
+	
+	def __del__(self):
+		id_generator.release_user_id(self.uid)
+	
+	@classmethod
+	def create(cls, conn):
+		uid = id_generator.generate_user_id()
+		if uid < 0:
+			return None
+		return cls(conn, uid)
 	
 	def check_version(self):
 		if not self.version_checked:
@@ -287,25 +298,20 @@ class GameManager:
 	
 	def handle_client(self, conn, addr):
 		"""處理單一客戶端的連線。"""
-		self.thread_lock.acquire()
+		with self.thread_lock:
+			user = User.create(conn)
+			if user == None:
+				conn.close()
+				print(f"同時連線數超過上限，中斷來自 {addr} 的連線")
+				return
+			
+			self.users[uid] = user
+			print(f"新連線：{uid} ({addr})")
+			
+			# 傳送初始資料封包
+			self.send_init_packet(uid)
+			self.broadcast_connect(uid)
 		
-		uid = id_generator.generate_player_uid()
-		if uid < 0:
-			conn.close()
-			print(f"同時連線數超過上限，中斷來自 {addr} 的連線")
-			self.thread_lock.release()
-			return
-		
-		user = User(conn, uid)
-		self.users[uid] = user
-		print(f"新連線：{uid} ({addr})")
-		
-		# 傳送初始資料封包
-		self.send_init_packet(uid)
-		self.broadcast_connect(uid)
-		
-		self.thread_lock.release()
-
 		try:
 			while True:
 				header = conn.recv(5, socket.MSG_WAITALL)
@@ -330,20 +336,16 @@ class GameManager:
 				if is_disconnected:
 					break
 				
-				self.thread_lock.acquire()
-				self.process_message(user, protocol, data)
-				self.thread_lock.release()
+				with self.thread_lock:
+					self.process_message(user, protocol, data)
 		except Exception as e:
 			print(traceback.format_exc())
 			print(f"{uid} ({addr}) 連線中斷")
 		finally:
-			self.thread_lock.acquire()
-			
-			self.remove_user(uid)
-			conn.close()
-			self.broadcast_disconnect(uid)
-			
-			self.thread_lock.release()
+			with self.thread_lock:
+				self.remove_user(uid)
+				conn.close()
+				self.broadcast_disconnect(uid)
 
 	def process_message(self, user, protocol, message):
 		"""處理來自客戶端的訊息。"""
@@ -529,22 +531,19 @@ class GameManager:
 
 	def start_game(self):
 		"""開始遊戲，設定玩家順序並要求出題。"""
-		self.thread_lock.acquire()
-		
-		self.countdown_timer = None
-		
-		self.reset_game()
-		self.current_round = 1
-		self.game_state = GAMESTATE.PREPARING
-		
-		self.player_order = list(self.players.keys())
-		random.shuffle(self.player_order)
-		self.current_guessing_idx = 0
-		
-		self.broadcast_player_order(include_list=True)
-		self.broadcast_start()
-		
-		self.thread_lock.release()
+		with self.thread_lock:
+			self.countdown_timer = None
+			
+			self.reset_game()
+			self.current_round = 1
+			self.game_state = GAMESTATE.PREPARING
+			
+			self.player_order = list(self.players.keys())
+			random.shuffle(self.player_order)
+			self.current_guessing_idx = 0
+			
+			self.broadcast_player_order(include_list=True)
+			self.broadcast_start()
 
 	def check_all_given_words(self):
 		"""檢查是否所有玩家都已出題。"""
@@ -645,7 +644,6 @@ class GameManager:
 		if uid in self.users:
 			print(f"玩家 {self.users[uid].name} ({uid}) 已移除")
 			del self.users[uid]
-			id_generator.release_player_uid(uid)
 
 def main():
 	HOST = '127.0.0.1'
