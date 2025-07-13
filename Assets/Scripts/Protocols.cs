@@ -5,8 +5,8 @@ using UnityEngine;
 public enum PROTOCOL_CLIENT
 {
 	NAME,
-	JOIN,
-	LEAVE,
+	JOIN_GAME,
+	LEAVE_GAME,
 	START,
 	CANCEL_START,
 	QUESTION,
@@ -15,6 +15,9 @@ public enum PROTOCOL_CLIENT
 	CHAT,
 	GIVE_UP,
 	VERSION,
+	CREATE_ROOM,
+	JOIN_ROOM,
+	LEAVE_ROOM,
 }
 
 public enum PROTOCOL_SERVER
@@ -23,8 +26,8 @@ public enum PROTOCOL_SERVER
 	CONNECT,
 	DISCONNECT,
 	NAME,
-	JOIN,
-	LEAVE,
+	JOIN_GAME,
+	LEAVE_GAME,
 	START_COUNTDOWN,
 	START,
 	GAMESTATE,
@@ -39,6 +42,7 @@ public enum PROTOCOL_SERVER
 	CHAT,
 	SKIP_GUESS,
 	VERSION,
+	ROOM_ID,
 }
 
 public class NetPacket
@@ -165,19 +169,22 @@ public partial class NetManager
 			case PROTOCOL_SERVER.INIT:
 				OnInitData(packet);
 				break;
+			case PROTOCOL_SERVER.NAME:
+				OnUserRename(packet);
+				break;
+			case PROTOCOL_SERVER.ROOM_ID:
+				OnEnterRoomID(packet);
+				break;
 			case PROTOCOL_SERVER.CONNECT:
 				OnUserConnect(packet);
 				break;
 			case PROTOCOL_SERVER.DISCONNECT:
 				OnUserDisconnect(packet);
 				break;
-			case PROTOCOL_SERVER.NAME:
-				OnUserRename(packet);
-				break;
-			case PROTOCOL_SERVER.JOIN:
+			case PROTOCOL_SERVER.JOIN_GAME:
 				OnPlayerJoin(packet);
 				break;
-			case PROTOCOL_SERVER.LEAVE:
+			case PROTOCOL_SERVER.LEAVE_GAME:
 				OnPlayerLeave(packet);
 				break;
 			case PROTOCOL_SERVER.START_COUNTDOWN:
@@ -686,6 +693,19 @@ public partial class NetManager
 		}
 	}
 
+	private void OnEnterRoomID(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		int roomID = reader.ReadInt32();
+		if (roomID >= 0)
+			GameData.Instance.RoomID = roomID;
+
+		if (ConnectPage.Instance != null)
+		{
+			//ConnectPage.Instance.OnEnterRoom();
+		}
+	}
+
 	// =========================================================
 
 	public void SendName(byte[] encodedName)
@@ -693,14 +713,33 @@ public partial class NetManager
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.NAME, encodedName.Length, encodedName);
 		SendPacket(packet);
 	}
-	public void SendJoin()
+	public void SendCreateRoom()
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.JOIN, 0, new byte[0]);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CREATE_ROOM, 0, new byte[0]);
 		SendPacket(packet);
 	}
-	public void SendLeave()
+	public void SendJoinRoom(uint roomID)
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.LEAVE, 0, new byte[0]);
+		ByteWriter writer = new ByteWriter();
+		writer.WriteUInt32(roomID);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.JOIN_ROOM, data.Length, data);
+		SendPacket(packet);
+	}
+	public void SendLeaveRoom()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.LEAVE_ROOM, 0, new byte[0]);
+		SendPacket(packet);
+	}
+	public void SendJoinGame()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.JOIN_GAME, 0, new byte[0]);
+		SendPacket(packet);
+	}
+	public void SendLeaveGame()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.LEAVE_GAME, 0, new byte[0]);
 		SendPacket(packet);
 	}
 	public void SendStart()

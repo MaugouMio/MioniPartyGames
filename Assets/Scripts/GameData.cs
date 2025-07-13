@@ -75,6 +75,7 @@ public class GameData
 	}
 
 	public ushort SelfUID { get; set; } = 0;
+	public int RoomID { get; set; } = 0;
 	public Dictionary<ushort, UserData> UserDatas { get; set; } = new Dictionary<ushort, UserData>();
 	public Dictionary<ushort, PlayerData> PlayerDatas { get; set; } = new Dictionary<ushort, PlayerData>();
 	public bool IsCountingDownStart { get; set; } = false;

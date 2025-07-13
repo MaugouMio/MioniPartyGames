@@ -529,9 +529,9 @@ public class GamePage : MonoBehaviour
 	{
 		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
 		if (isJoined)
-			NetManager.Instance.SendLeave();
+			NetManager.Instance.SendLeaveGame();
 		else
-			NetManager.Instance.SendJoin();
+			NetManager.Instance.SendJoinGame();
 	}
 
 	public void ClickStartGame()
