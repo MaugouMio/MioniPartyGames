@@ -23,8 +23,8 @@ class PROTOCOL_SERVER:
 	CONNECT			= 1
 	DISCONNECT		= 2
 	NAME			= 3
-	JOIN			= 4
-	LEAVE			= 5
+	JOIN_GAME		= 4
+	LEAVE_GAME		= 5
 	START_COUNTDOWN	= 6
 	START			= 7
 	GAMESTATE		= 8
@@ -39,10 +39,10 @@ class PROTOCOL_SERVER:
 	CHAT			= 17
 	SKIP_GUESS		= 18
 	VERSION			= 19
+	ROOM_ID			= 20
 
 class GAMESTATE:
 	WAITING			= 0  # 可以加入遊戲的階段
 	PREPARING		= 1  # 遊戲剛開始的出題階段
 	GUESSING		= 2  # 某個玩家猜題當中
 	VOTING			= 3  # 某個玩家猜測一個類別，等待其他人投票是否符合
-	

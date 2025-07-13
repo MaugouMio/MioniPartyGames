@@ -74,6 +74,9 @@ class GameRoom:
 			return None
 		return cls(room_id, game_manager)
 	
+	def get_id(self):
+		return self._room_id
+	
 	def add_user(self, uid):
 		if uid in self._user_ids:
 			return
@@ -351,7 +354,6 @@ class GameRoom:
 		
 		data = bytes()
 		data += uid.to_bytes(2, byteorder="little")
-		data += user.room_id.to_bytes(4, byteorder="little")
 		# 使用者列表
 		data += len(self._user_ids).to_bytes(1, byteorder="little")
 		for user_id in self._user_ids:
@@ -579,9 +581,16 @@ class GameManager:
 		self.users = {}
 		self.rooms = {}
 	
-	def _send_version_check_result(self, uid):
+	def _send_version_check_result(self, user):
 		packet = new_packet(PROTOCOL_SERVER.VERSION, CONST.GAME_VERSION.to_bytes(4, byteorder="little"))
-		user = self.users[uid]
+		try:
+			user.socket.sendall(packet)
+		except:
+			pass
+	
+	def _send_room_id(self, user, id):
+		# 正數時為進入的房間 ID，創建失敗為 -1，加入不存在房間為 -2
+		packet = new_packet(PROTOCOL_SERVER.ROOM_STATE, state.to_bytes(4, signed=True, byteorder="little"))
 		try:
 			user.socket.sendall(packet)
 		except:
@@ -671,11 +680,15 @@ class GameManager:
 			
 			room = GameRoom.create(self)
 			if room == None:
-				# TODO: 回傳房間數量過多無法創建訊息
+				self._send_room_id(user, -1)
 				return
 			
+			room_id = room.get_id()
+			user.room_id = room_id
 			room.add_user(user.uid)
-			self.rooms[room.room_id] = room
+			self.rooms[room_id] = room
+			
+			self._send_room_id(user, room_id)
 		elif protocol == PROTOCOL_CLIENT.JOIN_ROOM:
 			if not user.check_version():
 				return
@@ -685,9 +698,11 @@ class GameManager:
 			room_id = int.from_bytes(message, byteorder="little")
 			room = self.rooms.get(room_id)
 			if room == None:
+				self._send_room_id(user, -2)
 				return
 			
 			room.add_user(user.uid)
+			self._send_room_id(user, room_id)
 		elif protocol == PROTOCOL_CLIENT.LEAVE_ROOM:
 			if user.room_id < 0:
 				return
