@@ -605,8 +605,8 @@ class GameManager:
 				print(f"同時連線數超過上限，中斷來自 {addr} 的連線")
 				return
 			
-			self.users[uid] = user
-			print(f"新連線：{uid} ({addr})")
+			self.users[user.uid] = user
+			print(f"新連線：{user.uid} ({addr})")
 		
 		try:
 			while True:
@@ -636,7 +636,7 @@ class GameManager:
 					self._process_message(user, protocol, data)
 		except Exception as e:
 			print(traceback.format_exc())
-			print(f"{uid} ({addr}) 連線中斷")
+			print(f"{user.uid} ({addr}) 連線中斷")
 		finally:
 			with self.thread_lock:
 				self.remove_user(user)
@@ -649,7 +649,7 @@ class GameManager:
 				return
 			
 			version = int.from_bytes(message, byteorder="little")
-			self._send_version_check_result(user.uid)
+			self._send_version_check_result(user)
 			if version != CONST.GAME_VERSION:
 				user.socket.close()
 				return
@@ -793,7 +793,6 @@ class GameManager:
 
 	def remove_user(self, user):
 		"""移除斷線的使用者"""
-		self.remove_player(user.uid)
 		if user.room_id >= 0:
 			self.user_leave_room(user)
 		del self.users[user.uid]
