@@ -71,5 +71,10 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
+# Custom assets that should not be public on git
+ServerList.asset*
+
+
+
 # Python Server build file
 */__pycache__/*

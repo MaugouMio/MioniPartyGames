@@ -293,17 +293,8 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		uint serverVersion = reader.ReadUInt32();
-		if (serverVersion == GameData.GAME_VERSION)
-		{
-			if (ConnectPage.Instance != null)
-				ConnectPage.Instance.OpenNameWindow();
-		}
-		else
-		{
-			Debug.LogError($"遊戲版本不符，伺服器版本：{serverVersion}, 客戶端版本：{GameData.GAME_VERSION}");
-			if (ConnectPage.Instance != null)
-				ConnectPage.Instance.OnVersionCheckFailed();
-		}
+		if (ConnectPage.Instance != null)
+			ConnectPage.Instance.OnVersionCheckResult(serverVersion);
 	}
 	private void OnUserConnect(NetPacket packet)
 	{
