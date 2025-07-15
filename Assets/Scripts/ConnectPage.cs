@@ -56,12 +56,15 @@ public class ConnectPage : MonoBehaviour
 		if (serverVersion == GameData.GAME_VERSION)
 		{
 			NetManager.Instance.SendName(System.Text.Encoding.UTF8.GetBytes(NameInput.text));
-			SceneManager.LoadScene("GameScene");
+			SceneManager.LoadScene("RoomScene");
 		}
 		else
 		{
 			ConnectingMask.SetActive(false);
-			SetConnectMessage("遊戲版本不符，請更新遊戲");
+			if (serverVersion < GameData.GAME_VERSION)
+				SetConnectMessage("目標伺服器為較古老的版本，無法進行連線");
+			else
+				SetConnectMessage("遊戲版本不符，請更新遊戲");
 
 			Debug.LogError($"遊戲版本不符，伺服器版本：{serverVersion}, 客戶端版本：{GameData.GAME_VERSION}");
 		}
