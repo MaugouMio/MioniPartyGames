@@ -74,6 +74,9 @@ public class GameData
 		}
 	}
 
+	public string ServerName { get; set; } = "";
+
+
 	public ushort SelfUID { get; set; } = 0;
 	public int RoomID { get; set; } = 0;
 	public Dictionary<ushort, UserData> UserDatas { get; set; } = new Dictionary<ushort, UserData>();

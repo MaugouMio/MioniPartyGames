@@ -344,9 +344,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: ConnectPage, Assembly-CSharp
-        m_MethodName: ClickLogin
+      - m_Target: {fileID: 1630868329}
+        m_TargetAssemblyTypeName: RoomPage, Assembly-CSharp
+        m_MethodName: ClickBackToLogin
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -785,7 +785,7 @@ GameObject:
   - component: {fileID: 710989253}
   - component: {fileID: 710989252}
   m_Layer: 5
-  m_Name: Title
+  m_Name: ServerNameText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1014,9 +1014,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: ConnectPage, Assembly-CSharp
-        m_MethodName: ClickLogin
+      - m_Target: {fileID: 1630868329}
+        m_TargetAssemblyTypeName: RoomPage, Assembly-CSharp
+        m_MethodName: ClickJoinRoom
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1073,6 +1073,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1630868328}
+  - component: {fileID: 1630868329}
   m_Layer: 5
   m_Name: RoomPage
   m_TagString: Untagged
@@ -1103,6 +1104,19 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1630868329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1630868327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9c68a21d7909f44fb6dd1d7d548e0a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  serverNameText: {fileID: 710989252}
 --- !u!1 &1886198658
 GameObject:
   m_ObjectHideFlags: 0
@@ -1265,9 +1279,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: ConnectPage, Assembly-CSharp
-        m_MethodName: ClickLogin
+      - m_Target: {fileID: 1630868329}
+        m_TargetAssemblyTypeName: RoomPage, Assembly-CSharp
+        m_MethodName: ClickCreateRoom
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

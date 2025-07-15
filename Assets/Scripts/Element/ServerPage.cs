@@ -70,6 +70,7 @@ public class ServerPage : MonoBehaviour
 		{
 			var server = serverList.servers[selectedServerIndex];
 			ConnectPage.Instance.ConnectToServer(server.ip, server.port);
+			GameData.Instance.ServerName = server.name;
 			return;
 		}
 
@@ -92,6 +93,7 @@ public class ServerPage : MonoBehaviour
 			return;
 		}
 
+		GameData.Instance.ServerName = IP_Input.text;
 		PlayerPrefs.SetString("ServerIP", IP_Input.text);
 	}
 }
