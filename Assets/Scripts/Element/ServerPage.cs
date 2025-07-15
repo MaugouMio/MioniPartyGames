@@ -13,36 +13,27 @@ public class ServerPage : MonoBehaviour
 	private ServerListItem templateServerItem;
 
 	private ServerList serverList;
-	private List<ServerListItem> serverItems = new List<ServerListItem>();
 	private int selectedServerIndex = -1;
 
-	void Awake()
+	void Start()
 	{
 		IP_Input.text = PlayerPrefs.GetString("ServerIP", "");
-		serverItems.Add(templateServerItem);
 
 		serverList = Resources.Load<ServerList>("ScriptableObjects/ServerList");
 		if (serverList != null)
 		{
 			for (int i = 0; i < serverList.servers.Count; i++)
 			{
-				if (i > 0)
-				{
-					var newItem = Instantiate(templateServerItem, templateServerItem.transform.parent);
-					serverItems.Add(newItem);
-				}
-
-				var item = serverItems[i];
+				var item = i > 0 ? Instantiate(templateServerItem, templateServerItem.transform.parent) : templateServerItem;
 				item.SetServerIndex(i);
 				item.SetServerName(serverList.servers[i].name);
-				item.gameObject.SetActive(true);
 			}
 
-			// ¹w³]¿ï¨ì²Ä¤@­Ó¦øªA¾¹
+			// é è¨­é¸åˆ°ç¬¬ä¸€å€‹ä¼ºæœå™¨
 			if (serverList.servers.Count > 0)
 			{
 				selectedServerIndex = 0;
-				serverItems[0].Select();
+				templateServerItem.Select();
 			}
 		}
 		else
@@ -53,7 +44,7 @@ public class ServerPage : MonoBehaviour
 
 	void Update()
 	{
-		// ¨S¦³ OnFocus event ¥u¦n¦Û¤v°»´ú
+		// æ²’æœ‰ OnFocus event åªå¥½è‡ªå·±åµæ¸¬
 		if (selectedServerIndex >= 0 && IP_Input.isFocused)
 		{
 			selectedServerIndex = -1;
@@ -74,7 +65,7 @@ public class ServerPage : MonoBehaviour
 
 	public void ClickConnect()
 	{
-		// ¿ï¾Ü¦Cªí¤¤ªº¦øªA¾¹
+		// é¸æ“‡åˆ—è¡¨ä¸­çš„ä¼ºæœå™¨
 		if (selectedServerIndex >= 0)
 		{
 			var server = serverList.servers[selectedServerIndex];
@@ -85,7 +76,7 @@ public class ServerPage : MonoBehaviour
 		string[] param = IP_Input.text.Split(':');
 		if (param.Length != 2)
 		{
-			ConnectPage.Instance.SetConnectMessage("½Ğ¿é¤J¥¿½Tªº IP:PORT ®æ¦¡");
+			ConnectPage.Instance.SetConnectMessage("è«‹è¼¸å…¥æ­£ç¢ºçš„ IP:PORT æ ¼å¼");
 			return;
 		}
 
@@ -97,7 +88,7 @@ public class ServerPage : MonoBehaviour
 		}
 		catch
 		{
-			ConnectPage.Instance.SetConnectMessage("½Ğ¿é¤J¥¿½Tªº IP:PORT ®æ¦¡");
+			ConnectPage.Instance.SetConnectMessage("è«‹è¼¸å…¥æ­£ç¢ºçš„ IP:PORT æ ¼å¼");
 			return;
 		}
 
