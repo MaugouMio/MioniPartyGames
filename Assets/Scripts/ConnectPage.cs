@@ -8,6 +8,8 @@ public class ConnectPage : MonoBehaviour
 	public static ConnectPage Instance { get; private set; }
 
 	[SerializeField]
+	private Text VersionText;
+	[SerializeField]
 	private Text ConnectHintText;
 	[SerializeField]
 	private GameObject ConnectingMask;
@@ -24,6 +26,7 @@ public class ConnectPage : MonoBehaviour
 	// Start is called once before the first execution of Update after the MonoBehaviour is created
 	void Start()
     {
+		VersionText.text = $"v{GameData.GAME_VERSION}";
 		NameInput.text = PlayerPrefs.GetString("PlayerName", "");
 
 		NetManager.Instance.OnDisconnected = OnDisconnected;

@@ -3038,6 +3038,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f245c361379bf847a1468545dce3a7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  VersionText: {fileID: 279256654}
   ConnectHintText: {fileID: 462088675}
   ConnectingMask: {fileID: 2069673067}
   NameInput: {fileID: 555777950}
