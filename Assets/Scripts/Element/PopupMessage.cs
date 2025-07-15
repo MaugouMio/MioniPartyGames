@@ -20,7 +20,7 @@ public class PopupMessage : MonoBehaviour
 		if (canvasGroup == null)
 			Debug.LogError($"PopupMessage requires a CanvasGroup component. ({gameObject.name})");
 		else
-			canvasGroup.alpha = 0f; // ªì©l³z©ú«×³]¬°0
+			canvasGroup.alpha = 0f; // åˆå§‹é€æ˜åº¦è¨­ç‚º0
 
 		messageText = GetComponentInChildren<Text>();
 		if (messageText == null)
@@ -36,7 +36,7 @@ public class PopupMessage : MonoBehaviour
 	{
 		canvasGroup.alpha = 0f;
 
-		// ²H¤J°Êµe
+		// æ·¡å…¥å‹•ç•«
 		float currentTime = 0f;
 		while (currentTime < enterDuration)
 		{
@@ -49,10 +49,10 @@ public class PopupMessage : MonoBehaviour
 		transform.localPosition = initPosition;
 		canvasGroup.alpha = 1f;
 
-		// °±¯d®É¶¡
+		// åœç•™æ™‚é–“
 		yield return new WaitForSeconds(stayDuration);
 
-		// ²H¥X°Êµe
+		// æ·¡å‡ºå‹•ç•«
 		currentTime = 0f;
 		while (currentTime < exitDuration)
 		{

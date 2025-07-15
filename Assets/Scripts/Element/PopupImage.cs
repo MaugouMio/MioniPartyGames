@@ -19,7 +19,7 @@ public class PopupImage : MonoBehaviour
 		if (canvasGroup == null)
 			Debug.LogError($"PopupImage requires a CanvasGroup component. ({gameObject.name})");
 		else
-			canvasGroup.alpha = 0f; // ªì©l³z©ú«×³]¬°0
+			canvasGroup.alpha = 0f; // åˆå§‹é€æ˜åº¦è¨­ç‚º0
 
 		image = GetComponentInChildren<Image>();
 		if (image == null)
