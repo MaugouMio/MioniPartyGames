@@ -31,14 +31,21 @@ def release_user_id(id):
 
 
 class _RandomIDGenerator:
-	def __init__(self, max_id):
+	def __init__(self, max_id, *, max_generate_count=-1):
+		if max_generate_count > max_id:
+			raise Exception("Generation quota is greater than the total count of possible numbers")
+		
+		self._quota = max_generate_count
 		self._available_id_list = list(range(1, max_id + 1))
 	
 	def generate(self):
-		max_index = len(self._available_id_list) - 1
-		if max_index < 0:
+		if self._quota == 0:
 			return -1
 		
+		if self._quota > 0:
+			self._quota -= 1
+		
+		max_index = len(self._available_id_list) - 1
 		index = random.randint(0, max_index)
 		self._available_id_list[index], self._available_id_list[max_index] = (
 			self._available_id_list[max_index], self._available_id_list[index]
@@ -48,7 +55,8 @@ class _RandomIDGenerator:
 	def release(self, id):
 		self._available_id_list.append(id)
 
-_room_id_generator = _RandomIDGenerator(99999)
+# 最多允許建立 100 個房間
+_room_id_generator = _RandomIDGenerator(99999, max_generate_count=100)
 
 def generate_room_id():
 	return _room_id_generator.generate()
