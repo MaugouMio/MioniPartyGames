@@ -8,6 +8,10 @@ public class RoomPage : MonoBehaviour
 
 	[SerializeField]
 	private Text serverNameText;
+	[SerializeField]
+	private InputField RoomID_Input;
+	[SerializeField]
+	private PopupMessage messagePopup;
 
 	void Awake()
 	{
@@ -25,6 +29,16 @@ public class RoomPage : MonoBehaviour
 		Instance = null;
 	}
 
+	public void OnEnterRoom()
+	{
+		if (GameData.Instance.RoomID == -1)
+			messagePopup.ShowMessage("目前使用者人數過多，請稍後再試");
+		else if (GameData.Instance.RoomID == -2)
+			messagePopup.ShowMessage("該房號不存在，請確認輸入後再試");
+		else
+			SceneManager.LoadScene("GameScene");
+	}
+
 	public void ClickCreateRoom()
 	{
 		NetManager.Instance.SendCreateRoom();
@@ -32,7 +46,13 @@ public class RoomPage : MonoBehaviour
 
 	public void ClickJoinRoom()
 	{
-		// TODO: Open room id enter dialog
+		if (!uint.TryParse(RoomID_Input.text, out uint roomID))
+		{
+			messagePopup.ShowMessage("請輸入正確格式的房號");
+			return;
+		}
+
+		NetManager.Instance.SendJoinRoom(roomID);
 	}
 
 	public void ClickBackToLogin()
