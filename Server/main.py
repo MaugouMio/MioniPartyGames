@@ -77,14 +77,14 @@ class GameRoom:
 	def get_id(self):
 		return self._room_id
 	
-	def add_user(self, uid):
-		if uid in self._user_ids:
+	def add_user(self, user):
+		if user.uid in self._user_ids:
 			return
 		
-		self._user_ids.add(uid)
+		self._user_ids.add(user.uid)
 		
-		self.send_init_packet(uid)
-		self.broadcast_connect(uid)
+		self.send_init_packet(user)
+		self.broadcast_connect(user.uid, user.name)
 	
 	def remove_user(self, uid):
 		if uid not in self._user_ids:
@@ -106,7 +106,7 @@ class GameRoom:
 		
 		player = Player(user)
 		self._players[user.uid] = player
-		print(f"房間編號 {self.room_id} 使用者 {user.uid} 加入遊戲")
+		print(f"房間編號 {self._room_id} 使用者 {user.uid} 加入遊戲")
 		
 		self._stop_countdown()
 		self.broadcast_join(user.uid)
@@ -117,7 +117,7 @@ class GameRoom:
 		
 		self._stop_countdown()
 		del self._players[uid]
-		print(f"房間編號 {self.room_id} 使用者 {uid} 退出遊戲")
+		print(f"房間編號 {self._room_id} 使用者 {uid} 退出遊戲")
 		
 		if self._game_state != GAMESTATE.WAITING:
 			if len(self._players) < 2:
@@ -151,7 +151,7 @@ class GameRoom:
 			return
 		
 		self._start_countdown()
-		print(f"房間編號 {self.room_id} 使用者 {uid} 要求開始遊戲")
+		print(f"房間編號 {self._room_id} 使用者 {uid} 要求開始遊戲")
 
 	def request_cancel_start(self, uid):
 		if self._game_state != GAMESTATE.WAITING:
@@ -160,7 +160,7 @@ class GameRoom:
 			return
 		
 		self._stop_countdown()
-		print(f"房間編號 {self.room_id} 使用者 {uid} 取消開始遊戲倒數")
+		print(f"房間編號 {self._room_id} 使用者 {uid} 取消開始遊戲倒數")
 	
 	def request_assign_question(self, uid, word, is_locked):
 		if self._game_state != GAMESTATE.PREPARING:
@@ -178,9 +178,9 @@ class GameRoom:
 		next_player.question = word
 		next_player.question_locked = is_locked
 		if is_locked:
-			print(f"房間編號 {self.room_id} 使用者 {uid} 向 {next_player.user.uid} 出題：{word}")
+			print(f"房間編號 {self._room_id} 使用者 {uid} 向 {next_player.user.uid} 出題：{word}")
 		else:
-			print(f"房間編號 {self.room_id} 使用者 {uid} 展示 {next_player.user.uid} 的題目：{word}")
+			print(f"房間編號 {self._room_id} 使用者 {uid} 展示 {next_player.user.uid} 的題目：{word}")
 		self.broadcast_question(next_player)
 		
 		self._check_all_given_words()
@@ -209,7 +209,7 @@ class GameRoom:
 		self.temp_guess = guess
 		self._votes.clear()
 		self._game_state = GAMESTATE.VOTING
-		print(f"房間編號 {self.room_id} 使用者 {uid} 猜題：{guess}")
+		print(f"房間編號 {self._room_id} 使用者 {uid} 猜題：{guess}")
 		
 		self.broadcast_guess()
 	
@@ -224,7 +224,7 @@ class GameRoom:
 			return
 		
 		self._votes[uid] = vote
-		print(f"房間編號 {self.room_id} 使用者 {uid} 進行投票：{vote}")
+		print(f"房間編號 {self._room_id} 使用者 {uid} 進行投票：{vote}")
 		self.broadcast_vote(uid, vote)
 		self._check_all_votes()
 	
@@ -349,17 +349,15 @@ class GameRoom:
 	
 	# server messages ===========================================================================
 
-	def send_init_packet(self, uid):
-		user = self._manager.get_user(uid)
-		
+	def send_init_packet(self, user):
 		data = bytes()
-		data += uid.to_bytes(2, byteorder="little")
+		data += user.uid.to_bytes(2, byteorder="little")
 		# 使用者列表
 		data += len(self._user_ids).to_bytes(1, byteorder="little")
 		for user_id in self._user_ids:
-			user = self._manager.get_user(user_id)
+			target_user = self._manager.get_user(user_id)
 			data += user_id.to_bytes(2, byteorder="little")
-			encoded_name = user.name.encode("utf8")
+			encoded_name = target_user.name.encode("utf8")
 			data += len(encoded_name).to_bytes(1, byteorder="little")
 			data += encoded_name
 		# 玩家列表
@@ -413,8 +411,14 @@ class GameRoom:
 		for user in disconnected_users:
 			self._manager.remove_user(user)
 	
-	def broadcast_connect(self, uid):
-		packet = new_packet(PROTOCOL_SERVER.CONNECT, uid.to_bytes(2, byteorder="little"))
+	def broadcast_connect(self, uid, name):
+		data = bytes()
+		data += uid.to_bytes(2, byteorder="little")
+		encoded_name = name.encode("utf8")
+		data += len(encoded_name).to_bytes(1, byteorder="little")
+		data += encoded_name
+		
+		packet = new_packet(PROTOCOL_SERVER.CONNECT, data)
 		self._broadcast(packet, exclude_client=uid)
 	
 	def broadcast_disconnect(self, uid):
@@ -435,14 +439,14 @@ class GameRoom:
 		data = bytes()
 		data += uid.to_bytes(2, byteorder="little")
 		
-		packet = new_packet(PROTOCOL_SERVER.JOIN, data)
+		packet = new_packet(PROTOCOL_SERVER.JOIN_GAME, data)
 		self._broadcast(packet)
 	
 	def broadcast_leave(self, uid):
 		data = bytes()
 		data += uid.to_bytes(2, byteorder="little")
 		
-		packet = new_packet(PROTOCOL_SERVER.LEAVE, data)
+		packet = new_packet(PROTOCOL_SERVER.LEAVE_GAME, data)
 		self._broadcast(packet)
 	
 	def broadcast_start_countdown(self, is_stop = False):
@@ -590,7 +594,7 @@ class GameManager:
 	
 	def _send_room_id(self, user, id):
 		# 正數時為進入的房間 ID，創建失敗為 -1，加入不存在房間為 -2
-		packet = new_packet(PROTOCOL_SERVER.ROOM_STATE, state.to_bytes(4, signed=True, byteorder="little"))
+		packet = new_packet(PROTOCOL_SERVER.ROOM_ID, id.to_bytes(4, signed=True, byteorder="little"))
 		try:
 			user.socket.sendall(packet)
 		except:
@@ -685,7 +689,7 @@ class GameManager:
 			
 			room_id = room.get_id()
 			user.room_id = room_id
-			room.add_user(user.uid)
+			room.add_user(user)
 			self.rooms[room_id] = room
 			
 			self._send_room_id(user, room_id)
@@ -701,7 +705,9 @@ class GameManager:
 				self._send_room_id(user, -2)
 				return
 			
-			room.add_user(user.uid)
+			user.room_id = room_id
+			room.add_user(user)
+			
 			self._send_room_id(user, room_id)
 		elif protocol == PROTOCOL_CLIENT.LEAVE_ROOM:
 			if user.room_id < 0:

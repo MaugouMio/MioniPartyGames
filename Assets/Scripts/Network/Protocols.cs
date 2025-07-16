@@ -299,8 +299,14 @@ public partial class NetManager
 	private void OnUserConnect(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
-		ushort uid = reader.ReadUInt16();
-		GameData.Instance.UserDatas[uid] = new UserData { UID = uid };
+
+		var user = new UserData();
+		user.UID = reader.ReadUInt16();
+		user.Name = reader.ReadString();
+		GameData.Instance.UserDatas[user.UID] = user;
+
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateUserInfo();
 	}
 	private void OnUserDisconnect(NetPacket packet)
 	{
@@ -687,14 +693,10 @@ public partial class NetManager
 	private void OnEnterRoomID(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
-		int roomID = reader.ReadInt32();
-		if (roomID >= 0)
-			GameData.Instance.RoomID = roomID;
+		GameData.Instance.RoomID = reader.ReadInt32();
 
-		if (ConnectPage.Instance != null)
-		{
-			//ConnectPage.Instance.OnEnterRoom();
-		}
+		if (RoomPage.Instance != null)
+			RoomPage.Instance.OnEnterRoom();
 	}
 
 	// =========================================================
