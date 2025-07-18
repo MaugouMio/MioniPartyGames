@@ -526,6 +526,12 @@ public class GamePage : MonoBehaviour
 		GameResultWindow.SetActive(true);
 	}
 
+	public void ClickCopyRoomID()
+	{
+		ShowPopupMessage("已將房號複製到剪貼簿");
+		UniClipboard.SetText(GameData.Instance.RoomID.ToString());
+	}
+
 	public void ClickJoinGame()
 	{
 		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
