@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GamePage : MonoBehaviour
@@ -532,6 +533,12 @@ public class GamePage : MonoBehaviour
 			NetManager.Instance.SendLeaveGame();
 		else
 			NetManager.Instance.SendJoinGame();
+	}
+
+	public void ClickLeaveRoom()
+	{
+		NetManager.Instance.SendLeaveRoom();
+		SceneManager.LoadScene("RoomScene");
 	}
 
 	public void ClickStartGame()
