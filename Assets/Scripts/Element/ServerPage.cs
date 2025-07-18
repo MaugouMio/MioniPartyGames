@@ -18,6 +18,7 @@ public class ServerPage : MonoBehaviour
 	void Start()
 	{
 		IP_Input.text = PlayerPrefs.GetString("ServerIP", "");
+		selectedServerIndex = PlayerPrefs.GetInt("ServerIndex", -2);  // -1 是自訂伺服器，用 -2 表示沒選過
 
 		serverList = Resources.Load<ServerList>("ScriptableObjects/ServerList");
 		if (serverList != null)
@@ -27,10 +28,12 @@ public class ServerPage : MonoBehaviour
 				var item = i > 0 ? Instantiate(templateServerItem, templateServerItem.transform.parent) : templateServerItem;
 				item.SetServerIndex(i);
 				item.SetServerName(serverList.servers[i].name);
+				if (i == selectedServerIndex)
+					item.Select();
 			}
 
-			// 預設選到第一個伺服器
-			if (serverList.servers.Count > 0)
+			// 沒選過的話預設選到第一個伺服器
+			if (selectedServerIndex == -2 && serverList.servers.Count > 0)
 			{
 				selectedServerIndex = 0;
 				templateServerItem.Select();
@@ -39,6 +42,13 @@ public class ServerPage : MonoBehaviour
 		else
 		{
 			Debug.LogWarning("ServerList not found!");
+		}
+
+		// 如果沒有選擇伺服器，自動跳到自訂伺服器
+		if (selectedServerIndex < 0)
+		{
+			selectedServerIndex = -1;
+			customServerItem.Select();
 		}
 	}
 
@@ -71,6 +81,7 @@ public class ServerPage : MonoBehaviour
 			var server = serverList.servers[selectedServerIndex];
 			ConnectPage.Instance.ConnectToServer(server.ip, server.port);
 			GameData.Instance.ServerName = server.name;
+			PlayerPrefs.SetInt("ServerIndex", selectedServerIndex);
 			return;
 		}
 
@@ -95,5 +106,6 @@ public class ServerPage : MonoBehaviour
 
 		GameData.Instance.ServerName = IP_Input.text;
 		PlayerPrefs.SetString("ServerIP", IP_Input.text);
+		PlayerPrefs.SetInt("ServerIndex", selectedServerIndex);
 	}
 }
