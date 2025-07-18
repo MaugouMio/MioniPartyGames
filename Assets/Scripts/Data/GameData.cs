@@ -58,7 +58,7 @@ public enum GameState
 
 public class GameData
 {
-	public const uint GAME_VERSION = 1;
+	public const uint GAME_VERSION = 2;
 
 	public const int MAX_CHAT_RECORD = 30;
 	public const int MAX_EVENT_RECORD = 30;
