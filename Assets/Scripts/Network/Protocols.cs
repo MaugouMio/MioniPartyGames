@@ -47,26 +47,22 @@ public enum PROTOCOL_SERVER
 
 public class NetPacket
 {
-	public const int HEADER_SIZE = 5;
+	public const int HEADER_SIZE = 1;
 
 	public byte protocol;
-	public int size;
-
 	public byte[] data;
 
-	public NetPacket(byte protocol, int size, byte[] data)
+	public NetPacket(byte protocol, byte[] data)
 	{
 		this.protocol = protocol;
-		this.size = size;
 		this.data = data;
 	}
 
 	public byte[] ToBytes()
 	{
-		byte[] bytes = new byte[HEADER_SIZE + size];
+		byte[] bytes = new byte[HEADER_SIZE + data.Length];
 		bytes[0] = protocol;
-		Array.Copy(BitConverter.GetBytes(size), 0, bytes, 1, sizeof(int));
-		Array.Copy(data, 0, bytes, HEADER_SIZE, size);
+		Array.Copy(data, 0, bytes, HEADER_SIZE, data.Length);
 		return bytes;
 	}
 }
@@ -703,12 +699,12 @@ public partial class NetManager
 
 	public void SendName(byte[] encodedName)
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.NAME, encodedName.Length, encodedName);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.NAME, encodedName);
 		SendPacket(packet);
 	}
 	public void SendCreateRoom()
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CREATE_ROOM, 0, new byte[0]);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CREATE_ROOM, new byte[0]);
 		SendPacket(packet);
 	}
 	public void SendJoinRoom(uint roomID)
@@ -717,32 +713,32 @@ public partial class NetManager
 		writer.WriteUInt32(roomID);
 
 		byte[] data = writer.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.JOIN_ROOM, data.Length, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.JOIN_ROOM, data);
 		SendPacket(packet);
 	}
 	public void SendLeaveRoom()
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.LEAVE_ROOM, 0, new byte[0]);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.LEAVE_ROOM, new byte[0]);
 		SendPacket(packet);
 	}
 	public void SendJoinGame()
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.JOIN_GAME, 0, new byte[0]);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.JOIN_GAME, new byte[0]);
 		SendPacket(packet);
 	}
 	public void SendLeaveGame()
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.LEAVE_GAME, 0, new byte[0]);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.LEAVE_GAME, new byte[0]);
 		SendPacket(packet);
 	}
 	public void SendStart()
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.START, 0, new byte[0]);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.START, new byte[0]);
 		SendPacket(packet);
 	}
 	public void SendCancelStart()
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CANCEL_START, 0, new byte[0]);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CANCEL_START, new byte[0]);
 		SendPacket(packet);
 	}
 	public void SendAssignQuestion(byte[] encodedQuestion, bool isLocked)
@@ -752,18 +748,18 @@ public partial class NetManager
 		writer.WriteBytes(encodedQuestion);
 
 		byte[] data = writer.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.QUESTION, data.Length, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.QUESTION, data);
 		SendPacket(packet);
 	}
 	public void SendGuess(byte[] encodedGuess)
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GUESS, encodedGuess.Length, encodedGuess);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GUESS, encodedGuess);
 		SendPacket(packet);
 	}
 	public void SendVote(byte vote)
 	{
 		byte[] data = new byte[1] { vote };
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VOTE, 1, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VOTE, data);
 		SendPacket(packet);
 	}
 
@@ -774,13 +770,13 @@ public partial class NetManager
 		writer.WriteBytes(encodedMessage);
 
 		byte[] data = writer.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CHAT, data.Length, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CHAT, data);
 		SendPacket(packet);
 	}
 
 	public void SendGiveUp()
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GIVE_UP, 0, new byte[0]);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GIVE_UP, new byte[0]);
 		SendPacket(packet);
 	}
 
@@ -790,7 +786,7 @@ public partial class NetManager
 		writer.WriteUInt32(GameData.GAME_VERSION);
 
 		byte[] data = writer.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VERSION, data.Length, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VERSION, data);
 		SendPacket(packet);
 	}
 }

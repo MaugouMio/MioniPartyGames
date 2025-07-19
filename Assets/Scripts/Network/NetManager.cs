@@ -72,9 +72,9 @@ public partial class NetManager : MonoBehaviour
 
 			m_WebSocket.OnMessage += (bytes) =>
 			{
-				int len = BitConverter.ToInt32(bytes, 1);
-				NetPacket packet = new NetPacket(bytes[0], len, new byte[len]);
-				Array.Copy(bytes, NetPacket.HEADER_SIZE, packet.data, 0, len);
+				int dataLen = bytes.Length - 1;
+				NetPacket packet = new NetPacket(bytes[0], new byte[dataLen]);
+				Array.Copy(bytes, NetPacket.HEADER_SIZE, packet.data, 0, dataLen);
 				ProcessReceive(packet);
 			};
 

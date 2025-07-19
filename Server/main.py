@@ -52,7 +52,6 @@ class Player:
 def new_packet(protocol, data):
 	packet = bytes()
 	packet += protocol.to_bytes(1, byteorder="little")
-	packet += len(data).to_bytes(4, byteorder="little")
 	packet += data
 	return packet
 
@@ -620,8 +619,7 @@ class GameManager:
 			
 			async for message in websocket:
 				protocol = message[0]
-				# packet_size = int.from_bytes(message[1:5], byteorder="little")
-				if await self._process_message_check_should_close(user, protocol, message[5:]):
+				if await self._process_message_check_should_close(user, protocol, message[1:]):
 					break
 		except websockets.exceptions.ConnectionClosedOK:
 			pass
