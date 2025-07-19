@@ -94,8 +94,8 @@ class GameRoom:
 		if uid not in self._user_ids:
 			return
 		
-		await self.remove_player(uid)
 		self._user_ids.remove(uid)
+		await self.remove_player(uid)
 		
 		await self.broadcast_disconnect(uid)
 	
@@ -678,6 +678,7 @@ class GameManager:
 			await room.add_user(user)
 			
 			await self._send_room_id(user, room_id)
+			print(f"使用者 {user.uid} 建立房間編號 {room_id}")
 		elif protocol == PROTOCOL_CLIENT.JOIN_ROOM:
 			if not await user.check_version():
 				return True
@@ -694,6 +695,7 @@ class GameManager:
 			await room.add_user(user)
 			
 			await self._send_room_id(user, room_id)
+			print(f"使用者 {user.uid} 加入房間編號 {room_id}")
 		elif protocol == PROTOCOL_CLIENT.LEAVE_ROOM:
 			if user.room_id < 0:
 				return

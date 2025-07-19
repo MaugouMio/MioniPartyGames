@@ -529,7 +529,11 @@ public class GamePage : MonoBehaviour
 	public void ClickCopyRoomID()
 	{
 		ShowPopupMessage("已將房號複製到剪貼簿");
+#if !UNITY_WEBGL || UNITY_EDITOR
 		UniClipboard.SetText(GameData.Instance.RoomID.ToString());
+#else
+		WebGLCopyAndPaste.WebGLCopyAndPasteAPI.CopyToClipboard(GameData.Instance.RoomID.ToString());
+#endif
 	}
 
 	public void ClickJoinGame()
