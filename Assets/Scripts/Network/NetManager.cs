@@ -55,7 +55,7 @@ public partial class NetManager : MonoBehaviour
 			m_WebSocket.OnOpen += () =>
 			{
 				OnConnected?.Invoke();
-				SceneManager.LoadScene("RoomScene");
+				SendVersionCheck();
 			};
 
 			m_WebSocket.OnError += (e) =>
