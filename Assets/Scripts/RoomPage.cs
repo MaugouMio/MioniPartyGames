@@ -55,8 +55,8 @@ public class RoomPage : MonoBehaviour
 		NetManager.Instance.SendJoinRoom(roomID);
 	}
 
-	public void ClickBackToLogin()
+	public async void ClickBackToLogin()
 	{
-		NetManager.Instance.Disconnect();
+		await NetManager.Instance.Disconnect();
 	}
 }

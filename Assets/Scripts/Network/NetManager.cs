@@ -1,8 +1,5 @@
+using NativeWebSocket;
 using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,11 +11,7 @@ public partial class NetManager : MonoBehaviour
 	public Action OnConnected;
 	public Action OnDisconnected;
 
-	private TcpClient m_Client;
-	private Thread m_ReadThread;
-	private Queue<NetPacket> m_PacketQueue;
-
-	private bool isDisconnected = false;
+	private WebSocket m_WebSocket;
 
 	void Awake()
 	{
@@ -31,168 +24,94 @@ public partial class NetManager : MonoBehaviour
 		{
 			Instance = this;
 			DontDestroyOnLoad(gameObject);
-			ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 		}
 	}
 
 	void Update()
+{
+#if !UNITY_WEBGL || UNITY_EDITOR
+		if (m_WebSocket != null)
+			m_WebSocket.DispatchMessageQueue();
+#endif
+}
+
+	async void OnDestroy()
 	{
-		while (true)
-		{
-			NetPacket packet = GetPacket();
-			if (packet == null)
-				break;
-
-			ProcessReceive(packet);
-		}
-
-		Thread.MemoryBarrier();
-		if (isDisconnected)
-		{
-			Disconnect();
-			isDisconnected = false;
-		}
-		Thread.MemoryBarrier();
-	}
-
-	void OnDestroy()
-	{
-		Disconnect();
+		await Disconnect();
 	}
 
 	public async void Connect(string host, int port)
 	{
-		if (m_Client != null)
+		if (m_WebSocket != null)
+		{
+			Debug.LogWarning("WebSocket is already connected.");
 			return;
+		}
 
 		try
 		{
-			m_Client = new TcpClient();
-			try
-			{
-				var task = m_Client.ConnectAsync(host, port);
-				await Task.WhenAny(task, Task.Delay(5000));
-				if (task.IsFaulted || !task.IsCompleted)
-				{
-					Disconnect();
-					return;
-				}
-			}
-			catch
-			{
-				Debug.Log("Connect failed");
-			}
+			m_WebSocket = new WebSocket($"ws://{host}:{port}");
 
-			m_ReadThread = new Thread(ReadProcess);
-			m_ReadThread.IsBackground = true;
-			m_ReadThread.Start();
+			m_WebSocket.OnOpen += () =>
+			{
+				OnConnected?.Invoke();
+				SceneManager.LoadScene("RoomScene");
+			};
 
-			m_PacketQueue = new Queue<NetPacket>();
-			OnConnected?.Invoke();
-			SendVersionCheck();
+			m_WebSocket.OnError += (e) =>
+			{
+				Debug.LogError($"WebSocket error: {e}");
+				OnDisconnect();
+			};
+
+			m_WebSocket.OnClose += (e) =>
+			{
+				Debug.Log($"WebSocket connection closed: {e}");
+				OnDisconnect();
+			};
+
+			m_WebSocket.OnMessage += (bytes) =>
+			{
+				int len = BitConverter.ToInt32(bytes, 1);
+				NetPacket packet = new NetPacket(bytes[0], len, new byte[len]);
+				Array.Copy(bytes, NetPacket.HEADER_SIZE, packet.data, 0, len);
+				ProcessReceive(packet);
+			};
+
+			await m_WebSocket.Connect();
 		}
-		catch
+		catch (Exception e)
 		{
-			Disconnect();
+			Debug.LogError($"WebSocket connection error: {e.Message}");
+			await Disconnect();
 		}
 	}
 
-	public void Disconnect()
+	private void OnDisconnect()
 	{
-		if (m_Client != null)
-		{
-			m_Client.Close();
-			m_Client = null;
-		}
-		if (m_ReadThread != null)
-		{
-			m_ReadThread.Abort();
-			m_ReadThread = null;
-		}
 		OnDisconnected?.Invoke();
-
 		if (SceneManager.GetActiveScene().name != "LoginScene")
 			SceneManager.LoadScene("LoginScene");
+
+		m_WebSocket = null;
 	}
 
-	private NetPacket GetPacket()
+	public async Task Disconnect()
 	{
-		NetPacket packet = null;
+		if (m_WebSocket == null)
+			return;
 
-		Thread.MemoryBarrier();
-		if (m_PacketQueue != null && m_PacketQueue.Count > 0)
-			packet = m_PacketQueue.Dequeue();
-		Thread.MemoryBarrier();
-
-		return packet;
+		await m_WebSocket.Close();
+		OnDisconnect();
 	}
 
 	public void SendPacket(NetPacket packet)
 	{
-		if (m_Client == null)
+		if (m_WebSocket == null)
 			return;
-		if (!m_Client.Connected)
+		if (m_WebSocket.State != WebSocketState.Open)
 			return;
 
-		m_Client.GetStream().Write(packet.ToBytes());
-	}
-
-	private void GeneratePacket(byte[] buffer, ref int size)
-	{
-		int offset = 0;
-		while (size - offset >= NetPacket.HEADER_SIZE)  // header size
-		{
-			int len = BitConverter.ToInt32(buffer, offset + 1);
-			if (size - offset < len + NetPacket.HEADER_SIZE)
-				break;
-
-			NetPacket packet = new NetPacket(buffer[offset], len, new byte[len]);
-			Array.Copy(buffer, offset + NetPacket.HEADER_SIZE, packet.data, 0, len);
-
-			offset += len + NetPacket.HEADER_SIZE;
-
-			Thread.MemoryBarrier();
-			m_PacketQueue?.Enqueue(packet);
-			Thread.MemoryBarrier();
-		}
-
-		if (offset > 0)
-		{
-			// move elements
-			Array.Copy(buffer, offset, buffer, 0, size - offset);
-			size -= offset;
-		}
-	}
-
-	private void ReadProcess()
-	{
-		byte[] buffer = new byte[m_Client.ReceiveBufferSize];
-		int offset = 0;
-		while (true)
-		{
-			if (!m_Client.Connected)
-			{
-				Thread.Sleep(500);
-				continue;
-			}
-
-			try
-			{
-				int len = m_Client.GetStream().Read(buffer, offset, m_Client.ReceiveBufferSize - offset);
-				if (len > 0)
-				{
-					offset += len;
-					GeneratePacket(buffer, ref offset);
-				}
-			}
-			catch (Exception e)
-			{
-				Debug.Log(e.ToString());
-
-				Thread.MemoryBarrier();
-				isDisconnected = true;
-				Thread.MemoryBarrier();
-			}
-		}
+		m_WebSocket.Send(packet.ToBytes());
 	}
 }
