@@ -638,7 +638,7 @@ class GameManager:
 			version = int.from_bytes(message, byteorder="little")
 			await self._send_version_check_result(user)
 			if version != CONST.GAME_VERSION:
-				await websocket.close()
+				await user.socket.close()
 				return True
 			
 			user.version_checked = True
