@@ -9350,6 +9350,7 @@ GameObject:
   - component: {fileID: 1363337915}
   - component: {fileID: 1363337914}
   - component: {fileID: 1363337913}
+  - component: {fileID: 1363337916}
   m_Layer: 5
   m_Name: GuessInput
   m_TagString: Untagged
@@ -9496,6 +9497,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1363337911}
   m_CullTransparentMesh: 1
+--- !u!114 &1363337916
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1363337911}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc33a39070010f94fb1c2dd721c1286d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showHtmlElement: 0
 --- !u!1 &1378290361
 GameObject:
   m_ObjectHideFlags: 0
@@ -11807,6 +11821,7 @@ GameObject:
   - component: {fileID: 1845678012}
   - component: {fileID: 1845678011}
   - component: {fileID: 1845678013}
+  - component: {fileID: 1845678014}
   m_Layer: 5
   m_Name: QuestionInput
   m_TagString: Untagged
@@ -11953,6 +11968,19 @@ MonoBehaviour:
   m_CaretWidth: 2
   m_ReadOnly: 0
   m_ShouldActivateOnSelect: 1
+--- !u!114 &1845678014
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1845678009}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc33a39070010f94fb1c2dd721c1286d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showHtmlElement: 0
 --- !u!1 &1864211415
 GameObject:
   m_ObjectHideFlags: 0
@@ -12410,6 +12438,7 @@ GameObject:
   - component: {fileID: 1916966489}
   - component: {fileID: 1916966488}
   - component: {fileID: 1916966487}
+  - component: {fileID: 1916966490}
   m_Layer: 5
   m_Name: ChatInput
   m_TagString: Untagged
@@ -12558,6 +12587,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1916966485}
   m_CullTransparentMesh: 1
+--- !u!114 &1916966490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1916966485}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc33a39070010f94fb1c2dd721c1286d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showHtmlElement: 0
 --- !u!1 &1922015890
 GameObject:
   m_ObjectHideFlags: 0
