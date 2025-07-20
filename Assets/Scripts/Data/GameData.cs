@@ -42,9 +42,9 @@ public class PlayerData
 	public void AddGuessRecord(string guess, byte result)
 	{
 		if (result == 1)
-			GuessHistory.Add($"<color=#00ba00>✔</color> 是{guess}");
+			GuessHistory.Add($"<color=#00ba00>✓</color> 是{guess}");
 		else
-			GuessHistory.Add($"<color=#ba0000>✘</color> 不是{guess}");
+			GuessHistory.Add($"<color=#ba0000>×</color> 不是{guess}");
 	}
 }
 
