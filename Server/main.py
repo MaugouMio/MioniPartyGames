@@ -799,7 +799,7 @@ else:
 
 async def main():
 	HOST = CONFIG.get("HOST", "127.0.0.1")
-	PORT = int(CONFIG.get("PORT", 11451))
+	PORT = CONFIG.get("PORT", 11451)
 	CERT_CHAIN = CONFIG.get("CERT_CHAIN")
 	CERT_PRIVKEY = CONFIG.get("CERT_PRIVKEY")
 

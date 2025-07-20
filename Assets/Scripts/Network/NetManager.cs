@@ -50,7 +50,7 @@ public partial class NetManager : MonoBehaviour
 
 		try
 		{
-			m_WebSocket = new WebSocket($"ws://{host}:{port}");
+			m_WebSocket = new WebSocket($"wss://{host}:{port}");
 
 			m_WebSocket.OnOpen += () =>
 			{
