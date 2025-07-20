@@ -101,6 +101,7 @@ public class GamePage : MonoBehaviour
 
 	private bool needUpdate = true;
 	private IEnumerator countdownCoroutine = null;
+	private int assignQuestionFrame = 0;
 	private ushort checkingHistoryUID = 0;
 	private IEnumerator idleCheckCoroutine = null;
 
@@ -119,6 +120,10 @@ public class GamePage : MonoBehaviour
     {
 		if (needUpdate)
 			UpdateDataReal();
+
+		// 出題時沒有選擇輸入框直接按 Enter 視同鎖定 (非網頁版輸入框 enter 當下會馬上觸發這邊，所以要擋同 frame)
+		if (Time.frameCount != assignQuestionFrame && GameData.Instance.CurrentState == GameState.PREPARING && Input.GetKeyDown(KeyCode.Return))
+			ClickAssignQuestion(2);
 	}
 
 	void OnDestroy()
@@ -566,6 +571,9 @@ public class GamePage : MonoBehaviour
 	// mode = 0:輸入框 1:展示按鈕 2:鎖定按鈕
 	public void ClickAssignQuestion(int mode)
 	{
+		// 避免重複觸發
+		assignQuestionFrame = Time.frameCount;
+
 		byte[] encodedQuestion = System.Text.Encoding.UTF8.GetBytes(QuestionInput.text);
 		if (encodedQuestion.Length == 0)
 		{
