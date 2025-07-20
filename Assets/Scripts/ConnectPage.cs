@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -8,19 +7,19 @@ public class ConnectPage : MonoBehaviour
 	public static ConnectPage Instance { get; private set; }
 
 	[SerializeField]
-	private InputField IP_Input;
+	private Text VersionText;
 	[SerializeField]
 	private Text ConnectHintText;
 	[SerializeField]
-	private GameObject ConnectingMask;
+	private GameObject LicensePage;
 	[SerializeField]
-	private GameObject NameWindow;
+	private Text LicenseText;
+	[SerializeField]
+	private GameObject ConnectingMask;
 	[SerializeField]
 	private InputField NameInput;
 	[SerializeField]
-	private Text NameHintText;
-	[SerializeField]
-	private GameObject TopMask;
+	private ServerPage ServerSubPage;
 
 	void Awake()
 	{
@@ -30,10 +29,10 @@ public class ConnectPage : MonoBehaviour
 	// Start is called once before the first execution of Update after the MonoBehaviour is created
 	void Start()
     {
-		IP_Input.text = PlayerPrefs.GetString("ServerIP", "");
+		VersionText.text = $"v{GameData.GAME_VERSION}";
 		NameInput.text = PlayerPrefs.GetString("PlayerName", "");
+		LicenseText.text = Resources.Load<TextAsset>("LICENSE").text;
 
-		//NetManager.Instance.OnConnected = OpenNameWindow;
 		NetManager.Instance.OnDisconnected = OnDisconnected;
     }
 
@@ -41,82 +40,82 @@ public class ConnectPage : MonoBehaviour
 	{
 		Instance = null;
 
-		//NetManager.Instance.OnConnected = null;
 		NetManager.Instance.OnDisconnected = null;
 	}
 
 	private void OnDisconnected()
 	{
 		ConnectingMask.SetActive(false);
-		NameWindow.SetActive(false);
-		TopMask.SetActive(false);
 		SetConnectMessage("連線中斷");
 	}
 
 	public void SetConnectMessage(string message)
 	{
 		ConnectHintText.text = message;
+		ServerSubPage.Show(false);
 	}
 
-	public void OpenNameWindow()
+	public void OnVersionCheckResult(uint serverVersion)
 	{
-		//ConnectingMask.SetActive(false);
-		NameWindow.SetActive(true);
-	}
-
-	public void OnVersionCheckFailed()
-	{
-		ConnectingMask.SetActive(false);
-		SetConnectMessage("遊戲版本不符，請更新遊戲");
-	}
-
-	public void ClickConnect()
-	{
-		if (ConnectingMask.activeSelf)
-			return;
-
-		string[] param = IP_Input.text.Split(':');
-		if (param.Length != 2)
+		if (serverVersion == GameData.GAME_VERSION)
 		{
-			SetConnectMessage("請輸入正確的 IP:PORT 格式");
-			return;
+			NetManager.Instance.SendName(System.Text.Encoding.UTF8.GetBytes(NameInput.text));
+			SceneManager.LoadScene("RoomScene");
 		}
-
-		try
+		else
 		{
-			string ip = param[0];
-			int port = Int32.Parse(param[1]);
-			NetManager.Instance.Connect(ip, port);
-		}
-		catch
-		{
-			SetConnectMessage("請輸入正確的 IP:PORT 格式");
-			return;
-		}
+			ConnectingMask.SetActive(false);
+			if (serverVersion < GameData.GAME_VERSION)
+				SetConnectMessage("目標伺服器為較古老的版本，無法進行連線");
+			else
+				SetConnectMessage("遊戲版本不符，請更新遊戲");
 
-		PlayerPrefs.SetString("ServerIP", IP_Input.text);
-		ConnectingMask.SetActive(true);
+			Debug.LogError($"遊戲版本不符，伺服器版本：{serverVersion}, 客戶端版本：{GameData.GAME_VERSION}");
+		}
 	}
 
-	public void ClickSetName()
+	public void ShowLicense(bool show)
 	{
-		if (TopMask.activeSelf)
-			return;
+		LicensePage.SetActive(show);
+	}
 
+	private bool CheckAndSetName()
+	{
 		byte[] encodedName = System.Text.Encoding.UTF8.GetBytes(NameInput.text);
 		if (encodedName.Length == 0)
 		{
-			NameHintText.text = "請輸入要使用的名稱";
-			return;
+			SetConnectMessage("請輸入要使用的名稱");
+			return false;
 		}
 		if (encodedName.Length > 255)
 		{
-			NameHintText.text = "請縮短名稱再試";
-			return;
+			SetConnectMessage("請縮短名稱再試");
+			return false;
 		}
 
 		PlayerPrefs.SetString("PlayerName", NameInput.text);
-		NetManager.Instance.SendName(encodedName);
-		SceneManager.LoadScene("GameScene");
+		return true;
+	}
+
+	public void ClickLogin()
+	{
+		if (!CheckAndSetName())
+			return;
+
+		ServerSubPage.Show(true);
+	}
+
+	public void SelectServer(int index)
+	{
+		ServerSubPage.SelectServer(index);
+	}
+
+	public void ConnectToServer(string ip, int port)
+	{
+		ConnectingMask.SetActive(true);
+		ServerSubPage.Show(false);
+
+		SetConnectMessage("連線中...");
+		NetManager.Instance.Connect(ip, port);
 	}
 }
