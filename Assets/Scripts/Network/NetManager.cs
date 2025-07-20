@@ -102,7 +102,6 @@ public partial class NetManager : MonoBehaviour
 			return;
 
 		await m_WebSocket.Close();
-		OnDisconnect();
 	}
 
 	public void SendPacket(NetPacket packet)
