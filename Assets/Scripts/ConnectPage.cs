@@ -11,6 +11,10 @@ public class ConnectPage : MonoBehaviour
 	[SerializeField]
 	private Text ConnectHintText;
 	[SerializeField]
+	private GameObject LicensePage;
+	[SerializeField]
+	private Text LicenseText;
+	[SerializeField]
 	private GameObject ConnectingMask;
 	[SerializeField]
 	private InputField NameInput;
@@ -27,6 +31,7 @@ public class ConnectPage : MonoBehaviour
     {
 		VersionText.text = $"v{GameData.GAME_VERSION}";
 		NameInput.text = PlayerPrefs.GetString("PlayerName", "");
+		LicenseText.text = Resources.Load<TextAsset>("LICENSE").text;
 
 		NetManager.Instance.OnDisconnected = OnDisconnected;
     }
@@ -67,6 +72,11 @@ public class ConnectPage : MonoBehaviour
 
 			Debug.LogError($"遊戲版本不符，伺服器版本：{serverVersion}, 客戶端版本：{GameData.GAME_VERSION}");
 		}
+	}
+
+	public void ShowLicense(bool show)
+	{
+		LicensePage.SetActive(show);
 	}
 
 	private bool CheckAndSetName()
