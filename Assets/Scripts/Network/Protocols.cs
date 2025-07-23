@@ -302,7 +302,10 @@ public partial class NetManager
 		GameData.Instance.UserDatas[user.UID] = user;
 
 		if (GamePage.Instance != null)
+		{
+			GamePage.Instance.UpdatePlayerInfo();
 			GamePage.Instance.UpdateUserInfo();
+		}
 	}
 	private void OnUserDisconnect(NetPacket packet)
 	{
