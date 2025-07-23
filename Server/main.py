@@ -652,6 +652,9 @@ class GameManager:
 			if new_name == user.name:
 				return
 			
+			if '(' in new_name or ')' in new_name:
+				return
+			
 			user.name = new_name
 			print(f"使用者 {user.uid} 設定名稱為 {new_name}")
 			

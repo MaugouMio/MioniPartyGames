@@ -92,6 +92,11 @@ public class ConnectPage : MonoBehaviour
 			SetConnectMessage("請縮短名稱再試");
 			return false;
 		}
+		if (NameInput.text.Contains('(') || NameInput.text.Contains(')'))
+		{
+			SetConnectMessage("名稱包含不允許的字元");
+			return false;
+		}
 
 		PlayerPrefs.SetString("PlayerName", NameInput.text);
 		return true;
