@@ -29,7 +29,7 @@ public class ConnectPage : MonoBehaviour
 	// Start is called once before the first execution of Update after the MonoBehaviour is created
 	void Start()
     {
-		VersionText.text = $"v{GameData.GAME_VERSION}";
+		VersionText.text = $"v{GameData.GAME_VERSION}.{GameData.CLIENT_GAME_SUB_VERSION}";
 		NameInput.text = PlayerPrefs.GetString("PlayerName", "");
 		LicenseText.text = Resources.Load<TextAsset>("LICENSE").text;
 
