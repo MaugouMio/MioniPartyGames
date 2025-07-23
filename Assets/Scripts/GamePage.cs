@@ -287,15 +287,16 @@ public class GamePage : MonoBehaviour
 				{
 					SetGuessingPlayerBaseInfo();
 					bool isSelfGuessing = GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID;
+					bool needVote = !isSelfGuessing && GameData.Instance.IsPlayer();
 
-					GuessPageTopButtonGroup.SetActive(!isSelfGuessing);
+					GuessPageTopButtonGroup.SetActive(needVote);
 					GiveUpButton.SetActive(false);
 					GuessedText.gameObject.SetActive(true);
 					GuessedText.text = GameData.Instance.VotingGuess;
 					GuessInput.gameObject.SetActive(false);
 
 					GuessConfirmButtons.SetActive(false);
-					VoteButtons.SetActive(!isSelfGuessing);
+					VoteButtons.SetActive(needVote);
 				}
 				break;
 			default:
@@ -560,7 +561,7 @@ public class GamePage : MonoBehaviour
 	{
 		if (GameData.Instance.IsCountingDownStart)
 			NetManager.Instance.SendCancelStart();
-		else if (!GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID))
+		else if (!GameData.Instance.IsPlayer())
 			ShowPopupMessage("須先加入遊戲才能進行操作");
 		else if (GameData.Instance.PlayerDatas.Count < 2)
 			ShowPopupMessage("至少需要兩名玩家才能開始遊戲");

@@ -164,6 +164,11 @@ public class GameData
 		}
 	}
 
+	public bool IsPlayer()
+	{
+		return PlayerDatas.ContainsKey(SelfUID);
+	}
+
 	public bool IsUserNameDuplicated(string name)
 	{
 		if (userNameCount.ContainsKey(name))
