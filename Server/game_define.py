@@ -41,7 +41,11 @@ class PROTOCOL_SERVER:
 	VERSION			= 19
 	ROOM_ID			= 20
 
-class GAMESTATE:
+class GAME_TYPE:
+	GUESS_WORD		= 0  # 猜名詞
+	ARRANGE_NUMBER	= 1  # 數字排列
+
+class GUESS_WORD_STATE:
 	WAITING			= 0  # 可以加入遊戲的階段
 	PREPARING		= 1  # 遊戲剛開始的出題階段
 	GUESSING		= 2  # 某個玩家猜題當中

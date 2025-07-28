@@ -57,8 +57,9 @@ def new_packet(protocol, data):
 
 
 class GameRoom:
-	def __init__(self, id, game_manager):
+	def __init__(self, id, game_type, game_manager):
 		self._room_id = id
+		self._game_type = game_type
 		self._manager = game_manager
 		
 		self._user_ids = set()
@@ -71,11 +72,11 @@ class GameRoom:
 		id_generator.release_room_id(self._room_id)
 	
 	@classmethod
-	def create(cls, game_manager):
+	def create(cls, game_type, game_manager):
 		room_id = id_generator.generate_room_id()
 		if room_id < 0:
 			return None
-		return cls(room_id, game_manager)
+		return cls(room_id, game_type, game_manager)
 	
 	def get_id(self):
 		return self._room_id
@@ -102,7 +103,7 @@ class GameRoom:
 		return not self._user_ids
 	
 	async def add_player(self, user):
-		if self._game_state != GAMESTATE.WAITING:
+		if self._game_state != GUESS_WORD_STATE.WAITING:
 			return
 		if user.uid in self._players:
 			return
@@ -122,7 +123,7 @@ class GameRoom:
 		del self._players[uid]
 		print(f"房間編號 {self._room_id} 使用者 {uid} 退出遊戲")
 		
-		if self._game_state != GAMESTATE.WAITING:
+		if self._game_state != GUESS_WORD_STATE.WAITING:
 			if len(self._players) < 2:
 				self._reset_game()
 				await self.broadcast_leave(uid)
@@ -146,7 +147,7 @@ class GameRoom:
 		await self.broadcast_leave(uid)
 
 	async def request_start(self, uid):
-		if self._game_state != GAMESTATE.WAITING:
+		if self._game_state != GUESS_WORD_STATE.WAITING:
 			return
 		if uid not in self._players:
 			return
@@ -157,7 +158,7 @@ class GameRoom:
 		print(f"房間編號 {self._room_id} 使用者 {uid} 要求開始遊戲")
 
 	async def request_cancel_start(self, uid):
-		if self._game_state != GAMESTATE.WAITING:
+		if self._game_state != GUESS_WORD_STATE.WAITING:
 			return
 		if uid not in self._players:
 			return
@@ -166,7 +167,7 @@ class GameRoom:
 		print(f"房間編號 {self._room_id} 使用者 {uid} 取消開始遊戲倒數")
 	
 	async def request_assign_question(self, uid, word, is_locked):
-		if self._game_state != GAMESTATE.PREPARING:
+		if self._game_state != GUESS_WORD_STATE.PREPARING:
 			return
 		if uid not in self._players:
 			return
@@ -189,7 +190,7 @@ class GameRoom:
 		await self._check_all_given_words()
 	
 	async def request_guess(self, uid, guess):
-		if self._game_state != GAMESTATE.GUESSING:
+		if self._game_state != GUESS_WORD_STATE.GUESSING:
 			return
 		if uid != self._player_order[self._current_guessing_idx]:
 			return
@@ -211,13 +212,13 @@ class GameRoom:
 		
 		self.temp_guess = guess
 		self._votes.clear()
-		self._game_state = GAMESTATE.VOTING
+		self._game_state = GUESS_WORD_STATE.VOTING
 		print(f"房間編號 {self._room_id} 使用者 {uid} 猜題：{guess}")
 		
 		await self.broadcast_guess()
 	
 	async def request_vote(self, uid, vote):
-		if self._game_state != GAMESTATE.VOTING:
+		if self._game_state != GUESS_WORD_STATE.VOTING:
 			return
 		if vote < 0 or vote > 2:
 			return
@@ -232,7 +233,7 @@ class GameRoom:
 		await self._check_all_votes()
 	
 	async def request_give_up(self, uid):
-		if self._game_state != GAMESTATE.GUESSING:
+		if self._game_state != GUESS_WORD_STATE.GUESSING:
 			return
 		if uid != self._player_order[self._current_guessing_idx]:
 			return
@@ -267,7 +268,7 @@ class GameRoom:
 		
 		self._reset_game()
 		self._current_round = 1
-		self._game_state = GAMESTATE.PREPARING
+		self._game_state = GUESS_WORD_STATE.PREPARING
 		
 		self._player_order = list(self._players.keys())
 		random.shuffle(self._player_order)
@@ -277,7 +278,7 @@ class GameRoom:
 		await self.broadcast_start()
 
 	def _reset_game(self):
-		self._game_state = GAMESTATE.WAITING
+		self._game_state = GUESS_WORD_STATE.WAITING
 		self._current_round = 0
 		self._player_order = []
 		self._current_guessing_idx = 0
@@ -290,17 +291,17 @@ class GameRoom:
 
 	async def _check_all_given_words(self):
 		"""檢查是否所有玩家都已出題。"""
-		if self._game_state != GAMESTATE.PREPARING:
+		if self._game_state != GUESS_WORD_STATE.PREPARING:
 			return
 		if any(player.question_locked == False for player in self._players.values()):
 			return
 		
-		self._game_state = GAMESTATE.GUESSING
+		self._game_state = GUESS_WORD_STATE.GUESSING
 		await self.broadcast_game_state()
 
 	async def _check_all_votes(self):
 		"""檢查是否所有玩家都已投票。"""
-		if self._game_state != GAMESTATE.VOTING:
+		if self._game_state != GUESS_WORD_STATE.VOTING:
 			return
 		if len(self._votes) < len(self._players) - 1:
 			return
@@ -342,7 +343,7 @@ class GameRoom:
 			if self._players[next_uid].success_round != 0:
 				continue
 			
-			self._game_state = GAMESTATE.GUESSING
+			self._game_state = GUESS_WORD_STATE.GUESSING
 			
 			await self.broadcast_player_order()
 			await self.broadcast_game_state()
@@ -568,7 +569,7 @@ class GameRoom:
 		
 		exclude_client = None
 		if is_hidden:
-			if self._game_state == GAMESTATE.GUESSING or self._game_state == GAMESTATE.VOTING:
+			if self._game_state == GUESS_WORD_STATE.GUESSING or self._game_state == GUESS_WORD_STATE.VOTING:
 				exclude_client = self._player_order[self._current_guessing_idx]
 		if exclude_client == None:
 			data += int(0).to_bytes(1, byteorder="little")
