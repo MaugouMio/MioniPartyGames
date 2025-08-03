@@ -661,7 +661,8 @@ public class GamePage : MonoBehaviour
 			return;
 		}
 
-		NetManager.Instance.SendChatMessage(encodedMessage, HiddleChatToggle.isOn);
+		ushort hideUID = HiddleChatToggle.isOn ? GameData.Instance.GetCurrentPlayerUID() : (ushort)0;
+		NetManager.Instance.SendChatMessage(encodedMessage, hideUID);
 		ChatInput.text = "";
 		ChatInput.ActivateInputField();
 	}

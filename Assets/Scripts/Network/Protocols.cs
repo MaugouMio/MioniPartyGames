@@ -766,10 +766,10 @@ public partial class NetManager
 		SendPacket(packet);
 	}
 
-	public void SendChatMessage(byte[] encodedMessage, bool isHidden)
+	public void SendChatMessage(byte[] encodedMessage, ushort hideUID)
 	{
 		ByteWriter writer = new ByteWriter();
-		writer.WriteByte((byte)(isHidden ? 1 : 0));
+		writer.WriteUInt16(hideUID);
 		writer.WriteBytes(encodedMessage);
 
 		byte[] data = writer.GetBytes();

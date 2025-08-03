@@ -1,8 +1,12 @@
-class CONST:
+import enum
+
+
+class CONST(enum.IntEnum):
 	GAME_VERSION				= 3
 	START_COUNTDOWN_DURATION	= 5
 
-class PROTOCOL_CLIENT:
+@enum.unique
+class PROTOCOL_CLIENT(enum.IntEnum):
 	NAME			= 0
 	JOIN_GAME		= 1
 	LEAVE_GAME		= 2
@@ -18,7 +22,8 @@ class PROTOCOL_CLIENT:
 	JOIN_ROOM		= 12
 	LEAVE_ROOM		= 13
 
-class PROTOCOL_SERVER:
+@enum.unique
+class PROTOCOL_SERVER(enum.IntEnum):
 	INIT			= 0
 	CONNECT			= 1
 	DISCONNECT		= 2
@@ -41,11 +46,13 @@ class PROTOCOL_SERVER:
 	VERSION			= 19
 	ROOM_ID			= 20
 
-class GAME_TYPE:
+@enum.unique
+class GAME_TYPE(enum.IntEnum):
 	GUESS_WORD		= 0  # 猜名詞
 	ARRANGE_NUMBER	= 1  # 數字排列
 
-class GUESS_WORD_STATE:
+@enum.unique
+class GUESS_WORD_STATE(enum.IntEnum):
 	WAITING			= 0  # 可以加入遊戲的階段
 	PREPARING		= 1  # 遊戲剛開始的出題階段
 	GUESSING		= 2  # 某個玩家猜題當中

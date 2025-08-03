@@ -77,7 +77,7 @@ ServerList.asset*
 
 
 # Python Server build file
-*/__pycache__/*
+__pycache__/
 
 # Python Server custom file
 config.json
