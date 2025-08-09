@@ -7,20 +7,23 @@ class CONST(enum.IntEnum):
 
 @enum.unique
 class PROTOCOL_CLIENT(enum.IntEnum):
-	NAME			= 0
-	JOIN_GAME		= 1
-	LEAVE_GAME		= 2
-	START			= 3
-	CANCEL_START	= 4
-	QUESTION		= 5
-	GUESS			= 6
-	VOTE			= 7
-	CHAT			= 8
-	GIVE_UP			= 9
-	VERSION			= 10
-	CREATE_ROOM		= 11
-	JOIN_ROOM		= 12
-	LEAVE_ROOM		= 13
+	NAME					= 0
+	JOIN_GAME				= 1
+	LEAVE_GAME				= 2
+	START					= 3
+	CANCEL_START			= 4
+	QUESTION				= 5
+	GUESS					= 6
+	VOTE					= 7
+	CHAT					= 8
+	GIVE_UP					= 9
+	VERSION					= 10
+	CREATE_ROOM				= 11
+	JOIN_ROOM				= 12
+	LEAVE_ROOM				= 13
+	SET_MAX_NUMBER			= 14
+	SET_NUMBER_GROUP_COUNT	= 15
+	POSE_NUMBER				= 16
 
 @enum.unique
 class PROTOCOL_SERVER(enum.IntEnum):
@@ -57,3 +60,8 @@ class GUESS_WORD_STATE(enum.IntEnum):
 	PREPARING		= 1  # 遊戲剛開始的出題階段
 	GUESSING		= 2  # 某個玩家猜題當中
 	VOTING			= 3  # 某個玩家猜測一個類別，等待其他人投票是否符合
+
+@enum.unique
+class ARRANGE_NUMBER_STATE(enum.IntEnum):
+	WAITING			= 0  # 可以加入與設定遊戲的階段
+	PLAYING			= 1  # 遊戲進行中

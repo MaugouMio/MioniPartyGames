@@ -45,9 +45,6 @@ class GuessWordRoom(BaseGameRoom):
 		self._votes: dict[int, int] = {}
 		
 		self.temp_guess = ""
-		
-		for player in self._players.values():
-			player.reset()
 	
 	@override
 	def _generate_player_object(self, user: User) -> Player | None:

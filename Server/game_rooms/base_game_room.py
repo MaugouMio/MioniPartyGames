@@ -19,8 +19,12 @@ class BaseGameRoom(abc.ABC):
 		self._players: dict[int, BasePlayer] = dict()
 		self._countdown_timer: asyncio.Task = None
 
+		self._init_setting()
 		self._reset_game()
 	
+	def _init_setting(self):
+		"""遊戲房間初始設定。"""
+
 	@classmethod
 	def create(cls, user_manager: IUserManager):
 		"""創建遊戲房間。"""
@@ -189,6 +193,8 @@ class BaseGameRoom(abc.ABC):
 		override 時需要呼叫 `super()._reset_game()` 來確保基礎狀態被重置。
 		"""
 		self._is_playing = False
+		for player in self._players.values():
+			player.reset()
 	
 	# server messages ===========================================================================
 
