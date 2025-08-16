@@ -79,7 +79,16 @@ class ArrangeNumberRoom(BaseGameRoom):
 				await self._broadcast_end(True)
 				return
 			
-			# TODO: 檢查剩下能出牌的玩家是否還大於1人
+			await self._check_left_numbers()
+	
+	async def _check_left_numbers(self):
+		"""檢查是否還有剩餘的數字可以出牌。"""
+		player_list: list[Player] = cast(list[Player], self._players.values())
+		if any(len(player.numbers) > 0 for player in player_list):
+			return
+		
+		self._reset_game()
+		await self._broadcast_end(False)
 	
 	# user requests ===========================================================================
 
