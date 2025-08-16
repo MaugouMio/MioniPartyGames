@@ -92,15 +92,57 @@ class ArrangeNumberRoom(BaseGameRoom):
 	
 	# user requests ===========================================================================
 
+	async def _request_set_max_number(self, uid: int, max_number: int):
+		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
+			return
+		if max_number < 10 or max_number > 1000 or max_number == self._max_number:
+			return
+		if uid not in self._players:
+			return
+		
+		self._max_number = max_number
+		print(f"房間編號 {self._room_id} 使用者 {uid} 設定最大數字為 {max_number}")
+
+		await self._broadcast_settings()
+	
+	async def _request_set_number_group_count(self, uid: int, group_count: int):
+		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
+			return
+		if group_count < 1 or group_count > 50 or group_count == self._number_group_count:
+			return
+		if uid not in self._players:
+			return
+		
+		self._number_group_count = group_count
+		print(f"房間編號 {self._room_id} 使用者 {uid} 設定數字組數為 {group_count}")
+
+		await self._broadcast_settings()
+
+	async def _request_set_number_per_player(self, uid: int, number_per_player: int):
+		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
+			return
+		if number_per_player < 1 or number_per_player > 20 or number_per_player == self._number_per_player:
+			return
+		if uid not in self._players:
+			return
+		
+		self._number_per_player = number_per_player
+		print(f"房間編號 {self._room_id} 使用者 {uid} 設定每人數字數量為 {number_per_player}")
+
+		await self._broadcast_settings()
+
 	@override
 	async def _process_room_specific_request(self, user: User, protocol: PROTOCOL_CLIENT, message: bytes):
 		match protocol:
 			case PROTOCOL_CLIENT.SET_MAX_NUMBER:
-				# TODO: 設定最大數字
-				pass
+				max_number = int.from_bytes(message, byteorder="little")
+				await self._request_set_max_number(user.uid, max_number)
 			case PROTOCOL_CLIENT.SET_NUMBER_GROUP_COUNT:
-				# TODO: 設定數字組數
-				pass
+				group_count = message[0]
+				await self._request_set_number_group_count(user.uid, group_count)
+			case PROTOCOL_CLIENT.SET_NUMBER_PER_PLAYER:
+				number_per_player = message[0]
+				await self._request_set_number_per_player(user.uid, number_per_player)
 			case PROTOCOL_CLIENT.POSE_NUMBER:
 				# TODO: 處理出牌邏輯
 				pass
@@ -123,6 +165,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		# 遊戲設定
 		data += self._max_number.to_bytes(2, byteorder="little")
 		data += self._number_group_count.to_bytes(1, byteorder="little")
+		data += self._number_per_player.to_bytes(1, byteorder="little")
 		# 遊戲階段
 		data += self._game_state.to_bytes(1, byteorder="little")
 		# 當前數字
@@ -137,4 +180,13 @@ class ArrangeNumberRoom(BaseGameRoom):
 	async def _broadcast_end(self, is_force = False):
 		end_type = 1 if is_force else 0
 		packet = network.new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder="little"))
+		await self._broadcast(packet)
+	
+	async def _broadcast_settings(self):
+		data = bytes()
+		data += self._max_number.to_bytes(2, byteorder="little")
+		data += self._number_group_count.to_bytes(1, byteorder="little")
+		data += self._number_per_player.to_bytes(1, byteorder="little")
+		
+		packet = network.new_packet(PROTOCOL_SERVER.SETTINGS, data)
 		await self._broadcast(packet)

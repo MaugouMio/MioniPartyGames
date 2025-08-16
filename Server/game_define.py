@@ -48,20 +48,21 @@ class PROTOCOL_SERVER(enum.IntEnum):
 	SKIP_GUESS		= enum.auto()
 	VERSION			= enum.auto()
 	ROOM_ID			= enum.auto()
+	SETTINGS		= enum.auto()
 
 @enum.unique
-class GAME_TYPE(enum.Enum):
+class GAME_TYPE(enum.IntEnum):
 	GUESS_WORD		= enum.auto()  # 猜名詞
 	ARRANGE_NUMBER	= enum.auto()  # 數字排列
 
 @enum.unique
-class GUESS_WORD_STATE(enum.Enum):
+class GUESS_WORD_STATE(enum.IntEnum):
 	WAITING			= enum.auto()  # 可以加入遊戲的階段
 	PREPARING		= enum.auto()  # 遊戲剛開始的出題階段
 	GUESSING		= enum.auto()  # 某個玩家猜題當中
 	VOTING			= enum.auto()  # 某個玩家猜測一個類別，等待其他人投票是否符合
 
 @enum.unique
-class ARRANGE_NUMBER_STATE(enum.Enum):
+class ARRANGE_NUMBER_STATE(enum.IntEnum):
 	WAITING			= enum.auto()  # 可以加入與設定遊戲的階段
 	PLAYING			= enum.auto()  # 遊戲進行中
