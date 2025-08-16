@@ -1,5 +1,5 @@
 import random
-from typing import override
+from typing import cast, override
 
 from game_rooms.base_game_room import BaseGameRoom
 from game_define import PROTOCOL_CLIENT, PROTOCOL_SERVER, ARRANGE_NUMBER_STATE
@@ -27,6 +27,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 	def _init_setting(self):
 		self._max_number = 100
 		self._number_group_count = 1
+		self._number_per_player = 1
 
 	@override
 	def _reset_game(self):
@@ -43,9 +44,30 @@ class ArrangeNumberRoom(BaseGameRoom):
 
 	@override
 	async def _on_start_game_process(self):
-		self._current_round = 1
 		self._game_state = ARRANGE_NUMBER_STATE.PLAYING
-		# TODO: 給每個玩家分配數字並通知
+
+		# 給每個玩家分配數字並通知
+		player_list: list[Player] = cast(list[Player], self._players.values())
+		if self._number_group_count == 0:  # 代表無限組，每個人各自隨機生成就好
+			for player in player_list:
+				for _ in range(self._number_per_player):
+					player.numbers.append(random.randint(1, self._max_number))
+		else:  # 有限組數，隨機生成數字組
+			# 先檢查數字量是否足夠
+			if self._number_group_count * self._max_number < len(player_list) * self._number_per_player:
+				return
+			
+			# 從列表中抽指定數量數字
+			numbers = list(range(1, self._max_number + 1)) * self._number_group_count
+			for player in player_list:
+				for _ in range(self._number_per_player):
+					index = random.randint(0, len(numbers) - 1)
+					numbers[index], numbers[-1] = numbers[-1], numbers[index]
+					player.numbers.append(numbers.pop())
+		
+		# 先排好玩家的數字方便之後出牌時 pop
+		for player in player_list:
+			player.numbers.sort(reverse=True)
 
 	@override
 	async def _on_remove_player_game_process(self, uid: int):
@@ -59,6 +81,8 @@ class ArrangeNumberRoom(BaseGameRoom):
 			
 			# TODO: 檢查剩下能出牌的玩家是否還大於1人
 	
+	# user requests ===========================================================================
+
 	@override
 	async def _process_room_specific_request(self, user: User, protocol: PROTOCOL_CLIENT, message: bytes):
 		match protocol:
