@@ -23,6 +23,7 @@ class PROTOCOL_CLIENT(enum.IntEnum):
 	LEAVE_ROOM				= enum.auto()
 	SET_MAX_NUMBER			= enum.auto()
 	SET_NUMBER_GROUP_COUNT	= enum.auto()
+	SET_NUMBER_PER_PLAYER	= enum.auto()
 	POSE_NUMBER				= enum.auto()
 
 @enum.unique
@@ -49,6 +50,7 @@ class PROTOCOL_SERVER(enum.IntEnum):
 	VERSION			= enum.auto()
 	ROOM_ID			= enum.auto()
 	SETTINGS		= enum.auto()
+	POSE_NUMBER		= enum.auto()
 
 @enum.unique
 class GAME_TYPE(enum.IntEnum):

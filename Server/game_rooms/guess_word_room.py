@@ -383,7 +383,7 @@ class GuessWordRoom(BaseGameRoom):
 		packet = network.new_packet(PROTOCOL_SERVER.SKIP_GUESS, uid.to_bytes(2, byteorder="little"))
 		await self._broadcast(packet)
 	
-	async def _broadcast_end(self, is_force = False):
+	async def _broadcast_end(self, is_force: bool = False):
 		end_type = 1 if is_force else 0
 		packet = network.new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder="little"))
 		await self._broadcast(packet)

@@ -76,7 +76,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
 			if len(self._players) < 2:
 				self._reset_game()
-				await self._broadcast_end(True)
+				await self._broadcast_end(is_force=True)
 				return
 			
 			await self._check_left_numbers()
@@ -88,7 +88,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 			return
 		
 		self._reset_game()
-		await self._broadcast_end(False)
+		await self._broadcast_end()
 	
 	# user requests ===========================================================================
 
@@ -131,6 +131,30 @@ class ArrangeNumberRoom(BaseGameRoom):
 
 		await self._broadcast_settings()
 
+	async def _request_pose_number(self, uid: int):
+		if self._game_state != ARRANGE_NUMBER_STATE.PLAYING:
+			return
+		if uid not in self._players:
+			return
+		
+		player: Player = self._players[uid]
+		if not player.numbers:
+			return
+		
+		self_number = player.numbers[-1]
+		self._broadcast_number(uid, self_number)
+
+		# 檢查是不是最小數字的玩家
+		player_list: list[Player] = cast(list[Player], self._players.values())
+		if any(p.numbers[-1] < self_number for p in player_list):  # 有人數字更小，爆了
+			self._reset_game()
+			await self._broadcast_end()
+			return
+		
+		player.numbers.pop()  # 移除出牌的數字
+		if len(player.numbers) == 0:  # 如果出完了所有數字，檢查是否還有其他玩家有剩
+			await self._check_left_numbers()
+
 	@override
 	async def _process_room_specific_request(self, user: User, protocol: PROTOCOL_CLIENT, message: bytes):
 		match protocol:
@@ -144,8 +168,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 				number_per_player = message[0]
 				await self._request_set_number_per_player(user.uid, number_per_player)
 			case PROTOCOL_CLIENT.POSE_NUMBER:
-				# TODO: 處理出牌邏輯
-				pass
+				await self._request_pose_number(user.uid)
 	
 	# server messages ===========================================================================
 
@@ -176,11 +199,6 @@ class ArrangeNumberRoom(BaseGameRoom):
 			await user.socket.send(packet)
 		except:
 			pass
-
-	async def _broadcast_end(self, is_force = False):
-		end_type = 1 if is_force else 0
-		packet = network.new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder="little"))
-		await self._broadcast(packet)
 	
 	async def _broadcast_settings(self):
 		data = bytes()
@@ -189,4 +207,17 @@ class ArrangeNumberRoom(BaseGameRoom):
 		data += self._number_per_player.to_bytes(1, byteorder="little")
 		
 		packet = network.new_packet(PROTOCOL_SERVER.SETTINGS, data)
+		await self._broadcast(packet)
+	
+	async def _broadcast_number(self, uid: int, number: int):
+		data = bytes()
+		data += uid.to_bytes(2, byteorder="little")
+		data += number.to_bytes(2, byteorder="little")
+		
+		packet = network.new_packet(PROTOCOL_SERVER.POSE_NUMBER, data)
+		await self._broadcast(packet)
+
+	async def _broadcast_end(self, is_force: bool = False):
+		end_type = 1 if is_force else 0
+		packet = network.new_packet(PROTOCOL_SERVER.END, end_type.to_bytes(1, byteorder="little"))
 		await self._broadcast(packet)
