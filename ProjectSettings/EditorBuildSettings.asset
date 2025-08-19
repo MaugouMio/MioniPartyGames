@@ -12,8 +12,11 @@ EditorBuildSettings:
     path: Assets/Scenes/RoomScene.unity
     guid: 471d656095801414b98b4eb7d1b055fe
   - enabled: 1
-    path: Assets/Scenes/GameScene.unity
+    path: Assets/Scenes/GuessWordScene.unity
     guid: b40979bb808ef5a438d4f1eeaa42d286
+  - enabled: 1
+    path: Assets/Scenes/ArrangeNumberScene.unity
+    guid: d8af663672a7c3f4eaf4585157dbadef
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
