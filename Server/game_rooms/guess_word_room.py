@@ -2,7 +2,7 @@ import random
 from typing import cast, override
 
 from game_rooms.base_game_room import BaseGameRoom
-from game_define import PROTOCOL_CLIENT, PROTOCOL_SERVER, GUESS_WORD_STATE
+from game_define import PROTOCOL_CLIENT, PROTOCOL_SERVER, GUESS_WORD_STATE, GAME_TYPE
 import network
 from user import User, BasePlayer
 
@@ -261,6 +261,9 @@ class GuessWordRoom(BaseGameRoom):
 	@override
 	async def _send_init_packet(self, user: User):
 		data = bytes()
+		# 房間的遊戲類型
+		data += GAME_TYPE.GUESS_WORD.to_bytes(1, byteorder="little")
+
 		data += user.uid.to_bytes(2, byteorder="little")
 		# 使用者列表
 		data += len(self._user_ids).to_bytes(1, byteorder="little")

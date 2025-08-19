@@ -1,6 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
+public enum GameType
+{
+	UNDEFINED = 0,
+	GUESS_WORD,
+	ARRANGE_NUMBER,
+}
+
 public class UserData
 {
 	public ushort UID { get; set; } = 0;
@@ -79,6 +86,7 @@ public class GameData
 
 
 	public ushort SelfUID { get; set; } = 0;
+	public GameType GameType { get; set; } = GameType.UNDEFINED;
 	public int RoomID { get; set; } = 0;
 	public Dictionary<ushort, UserData> UserDatas { get; set; } = new Dictionary<ushort, UserData>();
 	public Dictionary<ushort, PlayerData> PlayerDatas { get; set; } = new Dictionary<ushort, PlayerData>();

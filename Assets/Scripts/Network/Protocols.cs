@@ -228,11 +228,8 @@ public partial class NetManager
 		}
 	}
 
-	private void OnInitData(NetPacket packet)
+	private void InitGuessWordData(ByteReader reader)
 	{
-		GameData.Instance.Reset();
-
-		ByteReader reader = new ByteReader(packet.data);
 		// 使用者自身的 UID
 		GameData.Instance.SelfUID = reader.ReadUInt16();
 		// 讀使用者資料
@@ -283,6 +280,42 @@ public partial class NetManager
 		// 更新介面
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdateData();
+	}
+
+	private void InitArrangeNumberData(ByteReader reader)
+	{
+		// 使用者自身的 UID
+		GameData.Instance.SelfUID = reader.ReadUInt16();
+		// 讀使用者資料
+		byte userCount = reader.ReadByte();
+		for (int i = 0; i < userCount; i++)
+		{
+			ushort uid = reader.ReadUInt16();
+			string name = reader.ReadString();
+			GameData.Instance.UserDatas[uid] = new UserData { UID = uid, Name = name };
+		}
+		// TODO: 讀取排數字房間的初始資料
+	}
+
+	private void OnInitData(NetPacket packet)
+	{
+		GameData.Instance.Reset();
+
+		ByteReader reader = new ByteReader(packet.data);
+		GameData.Instance.GameType = (GameType)reader.ReadByte();
+
+		switch (GameData.Instance.GameType)
+		{
+			case GameType.GUESS_WORD:
+				InitGuessWordData(reader);
+				break;
+			case GameType.ARRANGE_NUMBER:
+				InitArrangeNumberData(reader);
+				break;
+			default:
+				Debug.LogError("OnInitData: 未知的遊戲類型");
+				return;
+		}
 	}
 
 	private void OnVersionCheckResult(NetPacket packet)
