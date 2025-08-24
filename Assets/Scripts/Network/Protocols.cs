@@ -43,6 +43,7 @@ public enum PROTOCOL_SERVER
 	SKIP_GUESS,
 	VERSION,
 	ROOM_ID,
+	UID,
 }
 
 public class NetPacket
@@ -162,6 +163,9 @@ public partial class NetManager
 	{
 		switch ((PROTOCOL_SERVER)packet.protocol)
 		{
+			case PROTOCOL_SERVER.UID:
+				OnGetUID(packet);
+				break;
 			case PROTOCOL_SERVER.INIT:
 				OnInitData(packet);
 				break;
@@ -230,8 +234,6 @@ public partial class NetManager
 
 	private void InitGuessWordData(ByteReader reader)
 	{
-		// 使用者自身的 UID
-		GameData.Instance.SelfUID = reader.ReadUInt16();
 		// 讀使用者資料
 		byte userCount = reader.ReadByte();
 		for (int i = 0; i < userCount; i++)
@@ -284,8 +286,6 @@ public partial class NetManager
 
 	private void InitArrangeNumberData(ByteReader reader)
 	{
-		// 使用者自身的 UID
-		GameData.Instance.SelfUID = reader.ReadUInt16();
 		// 讀使用者資料
 		byte userCount = reader.ReadByte();
 		for (int i = 0; i < userCount; i++)
@@ -295,6 +295,12 @@ public partial class NetManager
 			GameData.Instance.UserDatas[uid] = new UserData { UID = uid, Name = name };
 		}
 		// TODO: 讀取排數字房間的初始資料
+	}
+
+	private void OnGetUID(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		GameData.Instance.SelfUID = reader.ReadUInt16();
 	}
 
 	private void OnInitData(NetPacket packet)

@@ -178,7 +178,6 @@ class ArrangeNumberRoom(BaseGameRoom):
 		# 房間的遊戲類型
 		data += GAME_TYPE.ARRANGE_NUMBER.to_bytes(1, byteorder="little")
 
-		data += user.uid.to_bytes(2, byteorder="little")
 		# 使用者列表
 		data += len(self._user_ids).to_bytes(1, byteorder="little")
 		for user_id in self._user_ids:

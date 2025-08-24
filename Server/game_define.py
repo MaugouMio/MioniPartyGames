@@ -7,7 +7,7 @@ class CONST(enum.IntEnum):
 
 @enum.unique
 class PROTOCOL_CLIENT(enum.IntEnum):
-	NAME					= enum.auto()
+	NAME					= 0
 	JOIN_GAME				= enum.auto()
 	LEAVE_GAME				= enum.auto()
 	START					= enum.auto()
@@ -28,7 +28,7 @@ class PROTOCOL_CLIENT(enum.IntEnum):
 
 @enum.unique
 class PROTOCOL_SERVER(enum.IntEnum):
-	INIT			= enum.auto()
+	INIT			= 0
 	CONNECT			= enum.auto()
 	DISCONNECT		= enum.auto()
 	NAME			= enum.auto()
@@ -50,6 +50,7 @@ class PROTOCOL_SERVER(enum.IntEnum):
 	VERSION			= enum.auto()
 	ROOM_ID			= enum.auto()
 	SETTINGS		= enum.auto()
+	UID				= enum.auto()
 	POSE_NUMBER		= enum.auto()
 
 @enum.unique
@@ -59,12 +60,12 @@ class GAME_TYPE(enum.IntEnum):
 
 @enum.unique
 class GUESS_WORD_STATE(enum.IntEnum):
-	WAITING			= enum.auto()  # 可以加入遊戲的階段
-	PREPARING		= enum.auto()  # 遊戲剛開始的出題階段
-	GUESSING		= enum.auto()  # 某個玩家猜題當中
-	VOTING			= enum.auto()  # 某個玩家猜測一個類別，等待其他人投票是否符合
+	WAITING			= 0				# 可以加入遊戲的階段
+	PREPARING		= enum.auto()	# 遊戲剛開始的出題階段
+	GUESSING		= enum.auto()	# 某個玩家猜題當中
+	VOTING			= enum.auto()	# 某個玩家猜測一個類別，等待其他人投票是否符合
 
 @enum.unique
 class ARRANGE_NUMBER_STATE(enum.IntEnum):
-	WAITING			= enum.auto()  # 可以加入與設定遊戲的階段
-	PLAYING			= enum.auto()  # 遊戲進行中
+	WAITING			= 0				# 可以加入與設定遊戲的階段
+	PLAYING			= enum.auto()	# 遊戲進行中

@@ -16,6 +16,14 @@ class GameManager(IUserManager):
 		self._users: dict[int, User] = {}
 		self._rooms: dict[int, BaseGameRoom] = {}
 	
+	async def _send_uid(self, user: User):
+		"""發送使用者 ID 給使用者。"""
+		packet = network.new_packet(PROTOCOL_SERVER.UID, user.uid.to_bytes(2, byteorder="little"))
+		try:
+			await user.socket.send(packet)
+		except:
+			pass
+	
 	async def _send_version_check_result(self, user: User):
 		"""發送遊戲版本給使用者。"""
 		packet = network.new_packet(PROTOCOL_SERVER.VERSION, CONST.GAME_VERSION.to_bytes(4, byteorder="little"))
@@ -53,6 +61,7 @@ class GameManager(IUserManager):
 			
 			self.add_user(user)
 			print(f"新連線：{user.uid} ({websocket.remote_address})")
+			await self._send_uid(user)
 			
 			async for message in websocket:
 				protocol = message[0]
