@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -86,7 +87,7 @@ public class GuessWordGamePage : GamePage
 		base.Update();
 
 		// 出題時沒有選擇輸入框直接按 Enter 視同鎖定 (非網頁版輸入框 enter 當下會馬上觸發這邊，所以要擋同 frame)
-		if (Time.frameCount != assignQuestionFrame && GameData.Instance.CurrentState == GameState.PREPARING && Input.GetKeyDown(KeyCode.Return))
+		if (Time.frameCount != assignQuestionFrame && GameData.Instance.GuessWordData.CurrentState == GuessWordState.PREPARING && Input.GetKeyDown(KeyCode.Return))
 			ClickAssignQuestion(2);
 	}
 
@@ -105,6 +106,22 @@ public class GuessWordGamePage : GamePage
 		UpdateCurrentPlayerGuessRecord();
 	}
 
+	protected override IEnumerable<PlayerData> GetDisplayPlayerList()
+	{
+		if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.WAITING)
+		{
+			foreach (var player in GameData.Instance.PlayerDatas.Values)
+				yield return player;
+		}
+
+		foreach (var uid in GameData.Instance.GuessWordData.PlayerOrder)
+		{
+			if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+				continue;
+			yield return player;
+		}
+	}
+
 	private void SetGuessingPlayerBaseInfo()
 	{
 		ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
@@ -118,25 +135,25 @@ public class GuessWordGamePage : GamePage
 
 	public void UpdateMiddlePage()
 	{
-		IdlePage.SetActive(GameData.Instance.CurrentState == GameState.WAITING);
-		QuestionPage.SetActive(GameData.Instance.CurrentState == GameState.PREPARING);
-		GuessingPage.SetActive(GameData.Instance.CurrentState == GameState.GUESSING || GameData.Instance.CurrentState == GameState.VOTING);
+		IdlePage.SetActive(GameData.Instance.GuessWordData.CurrentState == GuessWordState.WAITING);
+		QuestionPage.SetActive(GameData.Instance.GuessWordData.CurrentState == GuessWordState.PREPARING);
+		GuessingPage.SetActive(GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING || GameData.Instance.GuessWordData.CurrentState == GuessWordState.VOTING);
 
-		switch (GameData.Instance.CurrentState)
+		switch (GameData.Instance.GuessWordData.CurrentState)
 		{
-			case GameState.PREPARING:
+			case GuessWordState.PREPARING:
 				{
-					int selfIndex = GameData.Instance.PlayerOrder.IndexOf(GameData.Instance.SelfUID);
+					int selfIndex = GameData.Instance.GuessWordData.PlayerOrder.IndexOf(GameData.Instance.SelfUID);
 					PlayerQuestionPage.SetActive(selfIndex >= 0);
 					SpectateQuestionPage.SetActive(selfIndex < 0);
 					if (selfIndex >= 0)
 					{
-						ushort nextPlayerUID = GameData.Instance.PlayerOrder[(selfIndex + 1) % GameData.Instance.PlayerOrder.Count];
+						ushort nextPlayerUID = GameData.Instance.GuessWordData.PlayerOrder[(selfIndex + 1) % GameData.Instance.GuessWordData.PlayerOrder.Count];
 						QuestionTargetPlayer.text = GameData.Instance.UserDatas[nextPlayerUID].Name;
 					}
 				}
 				break;
-			case GameState.GUESSING:
+			case GuessWordState.GUESSING:
 				{
 					SetGuessingPlayerBaseInfo();
 					bool isSelfGuessing = GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID;
@@ -153,7 +170,7 @@ public class GuessWordGamePage : GamePage
 					VoteButtons.SetActive(false);
 				}
 				break;
-			case GameState.VOTING:
+			case GuessWordState.VOTING:
 				{
 					SetGuessingPlayerBaseInfo();
 					bool isSelfGuessing = GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID;
@@ -162,7 +179,7 @@ public class GuessWordGamePage : GamePage
 					GuessPageTopButtonGroup.SetActive(needVote);
 					GiveUpButton.SetActive(false);
 					GuessedText.gameObject.SetActive(true);
-					GuessedText.text = GameData.Instance.VotingGuess;
+					GuessedText.text = GameData.Instance.GuessWordData.VotingGuess;
 					GuessInput.gameObject.SetActive(false);
 
 					GuessConfirmButtons.SetActive(false);
@@ -176,7 +193,7 @@ public class GuessWordGamePage : GamePage
 
 	public void UpdateSelfGuessRecord(bool isNewRecord = false)
 	{
-		if (GameData.Instance.CurrentState == GameState.WAITING)
+		if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.WAITING)
 			return;
 
 		if (!GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData player))
@@ -193,7 +210,7 @@ public class GuessWordGamePage : GamePage
 
 	public void UpdateCurrentPlayerGuessRecord(bool isNewRecord = false)
 	{
-		if (GameData.Instance.CurrentState == GameState.WAITING)
+		if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.WAITING)
 			return;
 		
 		ushort uid = checkingHistoryUID > 0 ? checkingHistoryUID : GameData.Instance.GetCurrentPlayerUID();
@@ -237,9 +254,9 @@ public class GuessWordGamePage : GamePage
 
 	private void PassOperation()
 	{
-		if (GameData.Instance.CurrentState == GameState.GUESSING)
+		if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING)
 			NetManager.Instance.SendGuess(new byte[0]);  // 表示跳過猜測
-		else if (GameData.Instance.CurrentState == GameState.VOTING)
+		else if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.VOTING)
 			NetManager.Instance.SendVote(0);  // 直接投棄權
 	}
 
@@ -260,7 +277,7 @@ public class GuessWordGamePage : GamePage
 	public void StartIdleCheck()
 	{
 		// 輪到自己猜題，但其他玩家都已經猜過了，不需要閒置檢查
-		if (GameData.Instance.CurrentState == GameState.GUESSING && GameData.Instance.IsOthersAllGuessed())
+		if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING && GameData.Instance.IsOthersAllGuessed())
 			return;
 
 		// 有勾暫離時直接跳過不用等閒置

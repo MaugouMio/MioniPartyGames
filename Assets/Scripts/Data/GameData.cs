@@ -71,12 +71,52 @@ public class ArrangeNumberPlayerData : PlayerData
 	}
 }
 
-public enum GameState
+public enum GuessWordState
 {
 	WAITING,    // 可以加入遊戲的階段
 	PREPARING,  // 遊戲剛開始的出題階段
 	GUESSING,   // 某個玩家猜題當中
 	VOTING,     // 某個玩家猜測一個類別，等待其他人投票是否符合
+}
+
+public enum ArrangeNumberState
+{
+	WAITING,    // 可以加入與設定遊戲的階段
+	PLAYING,    // 遊戲進行中
+}
+
+public class GuessWordGameData
+{
+	public GuessWordState CurrentState { get; set; } = GuessWordState.WAITING;
+	public List<ushort> PlayerOrder { get; set; } = new List<ushort>();
+	public byte GuessingPlayerIndex { get; set; } = 0;
+	public string VotingGuess { get; set; } = "";
+	public Dictionary<ushort, byte> Votes { get; set; } = new Dictionary<ushort, byte>();
+
+	public void Reset()
+	{
+		PlayerOrder.Clear();
+		GuessingPlayerIndex = 0;
+		VotingGuess = "";
+		Votes.Clear();
+	}
+
+	public ushort GetCurrentPlayerUID()
+	{
+		if (GuessingPlayerIndex >= PlayerOrder.Count)
+			return 0;
+		return PlayerOrder[GuessingPlayerIndex];
+	}
+}
+
+public class ArrangeNumberData
+{
+	public ArrangeNumberState CurrentState { get; set; } = ArrangeNumberState.WAITING;
+
+	public void Reset()
+	{
+		// Do something in the future
+	}
 }
 
 public class GameData
@@ -102,18 +142,15 @@ public class GameData
 
 
 	public ushort SelfUID { get; set; } = 0;
-	public GameType GameType { get; set; }
+	public GameType CurrentGameType { get; set; }
 	public int RoomID { get; set; } = 0;
 	public Dictionary<ushort, UserData> UserDatas { get; set; } = new Dictionary<ushort, UserData>();
 	public Dictionary<ushort, PlayerData> PlayerDatas { get; set; } = new Dictionary<ushort, PlayerData>();
 	public bool IsCountingDownStart { get; set; } = false;
-	public GameState CurrentState { get; set; } = GameState.WAITING;
-	public List<ushort> PlayerOrder { get; set; } = new List<ushort>();
-	public byte GuessingPlayerIndex { get; set; } = 0;
-	public string VotingGuess { get; set; } = "";
-	public Dictionary<ushort, byte> Votes { get; set; } = new Dictionary<ushort, byte>();
 	public Queue<string> ChatRecord { get; set; } = new Queue<string>();
 	public Queue<string> EventRecord { get; set; } = new Queue<string>();
+	public GuessWordGameData GuessWordData { get; set; } = new GuessWordGameData();
+	public ArrangeNumberData ArrangeNumberData { get; set; } = new ArrangeNumberData();
 
 	private Dictionary<string, int> userNameCount = new Dictionary<string, int>();
 
@@ -123,12 +160,11 @@ public class GameData
 		PlayerDatas.Clear();
 		ChatRecord.Clear();
 		EventRecord.Clear();
-		PlayerOrder.Clear();
 		userNameCount.Clear();
 
-		GuessingPlayerIndex = 0;
-		VotingGuess = "";
-		Votes.Clear();
+		GuessWordData.Reset();
+		ArrangeNumberData.Reset();
+
 		ResetGame();
 	}
 
@@ -141,9 +177,7 @@ public class GameData
 
 	public ushort GetCurrentPlayerUID()
 	{
-		if (GuessingPlayerIndex >= PlayerOrder.Count)
-			return 0;
-		return PlayerOrder[GuessingPlayerIndex];
+		return GuessWordData.GetCurrentPlayerUID();
 	}
 
 	public void AddChatRecord(string message, bool isHidden)
@@ -194,10 +228,19 @@ public class GameData
 		return PlayerDatas.ContainsKey(SelfUID);
 	}
 
-	public bool CanJoinGame()
+	public bool IsCanJoinGameState()
 	{
-		// TODO: 根據不同遊戲類型判斷
-		return CurrentState == GameState.WAITING;
+		bool canJoin = false;
+		switch (CurrentGameType)
+		{
+			case GameType.GUESS_WORD:
+				canJoin = GuessWordData.CurrentState == GuessWordState.WAITING;
+				break;
+			case GameType.ARRANGE_NUMBER:
+				canJoin = ArrangeNumberData.CurrentState == ArrangeNumberState.WAITING;
+				break;
+		}
+		return canJoin;
 	}
 
 	public bool IsUserNameDuplicated(string name)

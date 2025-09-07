@@ -50,7 +50,7 @@ public class RoomPage : MonoBehaviour
 			return;
 		}
 
-		switch (GameData.Instance.GameType)
+		switch (GameData.Instance.CurrentGameType)
 		{
 			case GameType.GUESS_WORD:
 				SceneManager.LoadScene("GuessWordScene");

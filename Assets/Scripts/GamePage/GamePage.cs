@@ -79,60 +79,38 @@ public abstract class GamePage : MonoBehaviour
 		needUpdate = true;
 	}
 
+	protected virtual IEnumerable<PlayerData> GetDisplayPlayerList()
+	{
+		return GameData.Instance.PlayerDatas.Values;
+	}
+
 	public void UpdatePlayerInfo()
 	{
 		int idx = 0;
-		if (GameData.Instance.CurrentState == GameState.WAITING)
+		foreach (var player in GetDisplayPlayerList())
 		{
-			foreach (var player in GameData.Instance.PlayerDatas.Values)
+			PlayerInfo obj;
+			if (idx >= PlayerList.Count)
 			{
-				PlayerInfo obj;
-				if (idx >= PlayerList.Count)
-				{
-					obj = Instantiate(PlayerList[0]);
-					obj.transform.SetParent(PlayerList[0].transform.parent, false);
-					PlayerList.Add(obj);
-				}
-				else
-				{
-					obj = PlayerList[idx];
-				}
-
-				obj.gameObject.SetActive(true);
-				obj.UpdateData(player);
-				idx++;
+				obj = Instantiate(PlayerList[0]);
+				obj.transform.SetParent(PlayerList[0].transform.parent, false);
+				PlayerList.Add(obj);
 			}
-		}
-		else
-		{
-			foreach (var uid in GameData.Instance.PlayerOrder)
+			else
 			{
-				if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
-					continue;
-
-				PlayerInfo obj;
-				if (idx >= PlayerList.Count)
-				{
-					obj = Instantiate(PlayerList[0]);
-					obj.transform.SetParent(PlayerList[0].transform.parent, false);
-					PlayerList.Add(obj);
-				}
-				else
-				{
-					obj = PlayerList[idx];
-				}
-
-				obj.gameObject.SetActive(true);
-				PlayerList[idx].UpdateData(player);
-				idx++;
+				obj = PlayerList[idx];
 			}
+
+			obj.gameObject.SetActive(true);
+			obj.UpdateData(player);
+			idx++;
 		}
 		// 關閉未使用的物件
 		while (idx < PlayerList.Count)
 			PlayerList[idx++].gameObject.SetActive(false);
 
 		bool isJoined = GameData.Instance.IsPlayer();
-		JoinButton.interactable = isJoined || GameData.Instance.CanJoinGame();
+		JoinButton.interactable = isJoined || GameData.Instance.IsCanJoinGameState();
 		JoinButtonText.text = isJoined ? "離開遊戲" : "加入遊戲";
 	}
 
@@ -181,7 +159,8 @@ public abstract class GamePage : MonoBehaviour
 
 	public void UpdateStartButton()
 	{
-		if (GameData.Instance.CurrentState == GameState.WAITING)
+		// 可以加入遊戲的階段也代表可以開始遊戲
+		if (GameData.Instance.IsCanJoinGameState())
 		{
 			StartButton.interactable = true;
 			StartButtonText.text = GameData.Instance.IsCountingDownStart ? "取消開始" : "開始遊戲";

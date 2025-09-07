@@ -262,23 +262,23 @@ public partial class NetManager
 			GameData.Instance.PlayerDatas[uid] = player;
 		}
 		// 遊戲階段
-		GameData.Instance.CurrentState = (GameState)reader.ReadByte();
+		GameData.Instance.GuessWordData.CurrentState = (GuessWordState)reader.ReadByte();
 		// 玩家順序
 		byte orderCount = reader.ReadByte();
 		for (int i = 0; i < orderCount; i++)
 		{
 			ushort uid = reader.ReadUInt16();
-			GameData.Instance.PlayerOrder.Add(uid);
+			GameData.Instance.GuessWordData.PlayerOrder.Add(uid);
 		}
-		GameData.Instance.GuessingPlayerIndex = reader.ReadByte();
+		GameData.Instance.GuessWordData.GuessingPlayerIndex = reader.ReadByte();
 		// 投票狀況
-		GameData.Instance.VotingGuess = reader.ReadString();
+		GameData.Instance.GuessWordData.VotingGuess = reader.ReadString();
 		byte voteCount = reader.ReadByte();
 		for (int i = 0; i < voteCount; i++)
 		{
 			ushort uid = reader.ReadUInt16();
 			byte vote = reader.ReadByte();
-			GameData.Instance.Votes[uid] = vote;
+			GameData.Instance.GuessWordData.Votes[uid] = vote;
 		}
 
 		// 更新介面
@@ -310,9 +310,9 @@ public partial class NetManager
 		GameData.Instance.Reset();
 
 		ByteReader reader = new ByteReader(packet.data);
-		GameData.Instance.GameType = (GameType)reader.ReadByte();
+		GameData.Instance.CurrentGameType = (GameType)reader.ReadByte();
 
-		switch (GameData.Instance.GameType)
+		switch (GameData.Instance.CurrentGameType)
 		{
 			case GameType.GUESS_WORD:
 				InitGuessWordData(reader);
@@ -400,15 +400,15 @@ public partial class NetManager
 		ushort uid = reader.ReadUInt16();
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 			GameData.Instance.PlayerDatas.Remove(uid);
-		if (GameData.Instance.PlayerOrder.Contains(uid))
-			GameData.Instance.PlayerOrder.Remove(uid);
+		if (GameData.Instance.GuessWordData.PlayerOrder.Contains(uid))
+			GameData.Instance.GuessWordData.PlayerOrder.Remove(uid);
 
 		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 離開了遊戲");
 
 		// 更新介面
 		if (GuessWordGamePage.Instance != null)
 		{
-			if (GameData.Instance.CurrentState == GameState.WAITING)
+			if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.WAITING)
 				GuessWordGamePage.Instance.UpdatePlayerInfo();
 			else
 				GuessWordGamePage.Instance.UpdateData();
@@ -441,7 +441,7 @@ public partial class NetManager
 	private void OnGameStart(NetPacket packet)
 	{
 		GameData.Instance.ResetGame();
-		GameData.Instance.CurrentState = GameState.PREPARING;
+		GameData.Instance.GuessWordData.CurrentState = GuessWordState.PREPARING;
 
 		GameData.Instance.AddEventRecord("遊戲開始");
 
@@ -457,12 +457,12 @@ public partial class NetManager
 	}
 	private void OnGameStateChanged(NetPacket packet)
 	{
-		GameState originState = GameData.Instance.CurrentState;
+		GuessWordState originState = GameData.Instance.GuessWordData.CurrentState;
 
 		ByteReader reader = new ByteReader(packet.data);
-		GameData.Instance.CurrentState = (GameState)reader.ReadByte();
+		GameData.Instance.GuessWordData.CurrentState = (GuessWordState)reader.ReadByte();
 
-		if (GameData.Instance.CurrentState == GameState.GUESSING)
+		if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING)
 		{
 			ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 			if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
@@ -475,25 +475,25 @@ public partial class NetManager
 		if (GuessWordGamePage.Instance != null)
 		{
 			GuessWordGamePage.Instance.UpdateData();
-			if (GameData.Instance.CurrentState == GameState.GUESSING && GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID)
+			if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING && GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID)
 				GuessWordGamePage.Instance.StartIdleCheck();
-			if (originState == GameState.PREPARING && GameData.Instance.CurrentState == GameState.GUESSING)
+			if (originState == GuessWordState.PREPARING && GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING)
 				GuessWordGamePage.Instance.PlaySound("ding");
 		}
 	}
 	private void OnUpdatePlayerOrder(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
-		GameData.Instance.GuessingPlayerIndex = reader.ReadByte();
+		GameData.Instance.GuessWordData.GuessingPlayerIndex = reader.ReadByte();
 		bool needUpdateOrder = reader.ReadByte() == 1;
 		if (needUpdateOrder)
 		{
-			GameData.Instance.PlayerOrder.Clear();
+			GameData.Instance.GuessWordData.PlayerOrder.Clear();
 			byte orderCount = reader.ReadByte();
 			for (int i = 0; i < orderCount; i++)
 			{
 				ushort uid = reader.ReadUInt16();
-				GameData.Instance.PlayerOrder.Add(uid);
+				GameData.Instance.GuessWordData.PlayerOrder.Add(uid);
 			}
 		}
 
@@ -502,7 +502,7 @@ public partial class NetManager
 		{
 			GuessWordGamePage.Instance.UpdatePlayerInfo();
 			// 猜題玩家更換時強制改顯示該玩家的歷史紀錄
-			if (GameData.Instance.GuessingPlayerIndex < GameData.Instance.PlayerOrder.Count)
+			if (GameData.Instance.GuessWordData.GuessingPlayerIndex < GameData.Instance.GuessWordData.PlayerOrder.Count)
 			{
 				ushort currentPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 				GuessWordGamePage.Instance.ShowPlayerHistoryRecord(currentPlayerUID);
@@ -605,13 +605,13 @@ public partial class NetManager
 	private void OnPlayerGuessed(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
-		GameData.Instance.VotingGuess = reader.ReadString();
-		GameData.Instance.Votes.Clear();
-		GameData.Instance.CurrentState = GameState.VOTING;
+		GameData.Instance.GuessWordData.VotingGuess = reader.ReadString();
+		GameData.Instance.GuessWordData.Votes.Clear();
+		GameData.Instance.GuessWordData.CurrentState = GuessWordState.VOTING;
 
 		ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 		if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
-			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 提問他的名詞是否為 <color=blue>{GameData.Instance.VotingGuess}</color>");
+			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 提問他的名詞是否為 <color=blue>{GameData.Instance.GuessWordData.VotingGuess}</color>");
 
 		// 更新介面
 		if (GuessWordGamePage.Instance != null)
@@ -627,7 +627,7 @@ public partial class NetManager
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
 		byte vote = reader.ReadByte();
-		GameData.Instance.Votes[uid] = vote;
+		GameData.Instance.GuessWordData.Votes[uid] = vote;
 
 		string voteText = vote switch
 		{
@@ -689,7 +689,7 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		bool isForceEnd = reader.ReadByte() == 1;
-		GameData.Instance.CurrentState = GameState.WAITING;
+		GameData.Instance.GuessWordData.CurrentState = GuessWordState.WAITING;
 
 		GameData.Instance.AddEventRecord(isForceEnd ? "遊戲已被中斷" : "遊戲結束");
 
