@@ -744,9 +744,13 @@ public partial class NetManager
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.NAME, encodedName);
 		SendPacket(packet);
 	}
-	public void SendCreateRoom()
+	public void SendCreateRoom(GameType gameType)
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CREATE_ROOM, new byte[0]);
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte((byte)gameType);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CREATE_ROOM, data);
 		SendPacket(packet);
 	}
 	public void SendJoinRoom(uint roomID)

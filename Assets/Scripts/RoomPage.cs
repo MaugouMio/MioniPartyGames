@@ -11,6 +11,8 @@ public class RoomPage : MonoBehaviour
 	[SerializeField]
 	private InputField RoomID_Input;
 	[SerializeField]
+	private SelectGameWindow selectGameWindow;
+	[SerializeField]
 	private PopupMessage messagePopup;
 
 	void Awake()
@@ -63,7 +65,7 @@ public class RoomPage : MonoBehaviour
 
 	public void ClickCreateRoom()
 	{
-		NetManager.Instance.SendCreateRoom();
+		selectGameWindow.SetShow(true);
 	}
 
 	public void ClickJoinRoom()
