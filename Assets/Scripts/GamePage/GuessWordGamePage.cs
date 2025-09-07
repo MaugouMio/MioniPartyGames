@@ -5,18 +5,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class GamePage : MonoBehaviour
+public class GuessWordGamePage : GamePage
 {
-	public static GamePage Instance { get; private set; }
-
-	[SerializeField]
-	private List<PlayerInfo> PlayerList;
-	[SerializeField]
-	private List<UserInfo> UserList;
-	[SerializeField]
-	private Button JoinButton;
-	[SerializeField]
-	private Text JoinButtonText;
+	public static GuessWordGamePage Instance { get; private set; }
 
 	[SerializeField]
 	private GameObject IdlePage;
@@ -58,192 +49,71 @@ public class GamePage : MonoBehaviour
 	private GameObject PassGuessButton;
 	[SerializeField]
 	private GameObject VoteButtons;
-	[SerializeField]
-	private Slider VolumeSlider;
-	[SerializeField]
-	private Text VolumeText;
 
-	[SerializeField]
-	private TextList EventList;
-	[SerializeField]
-	private TextList ChatList;
 	[SerializeField]
 	private Toggle HiddleChatToggle;
 	[SerializeField]
 	private Text HiddleChatToggleText;
-	[SerializeField]
-	private InputField ChatInput;
 	[SerializeField]
 	private TextList GuessRecord;
 	[SerializeField]
 	private Text CurrentPlayerGuessRecordTitle;
 	[SerializeField]
 	private TextList CurrentPlayerGuessRecord;
-	[SerializeField]
-	private Button StartButton;
-	[SerializeField]
-	private Text StartButtonText;
 
 	[SerializeField]
 	private GameObject GameResultWindow;
 	[SerializeField]
 	private Text GameResultText;
 
-	[SerializeField]
-	private Text StartCountdownText;
-	[SerializeField]
-	private PopupImage ImagePopup;
-	[SerializeField]
-	private PopupMessage MessagePopup;
-
-	[SerializeField]
-	private AudioSource SFXPlayer;
-
-	private bool needUpdate = true;
-	private IEnumerator countdownCoroutine = null;
 	private int assignQuestionFrame = 0;
 	private ushort checkingHistoryUID = 0;
 	private IEnumerator idleCheckCoroutine = null;
 
-	void Awake()
+	protected override void Awake()
 	{
+		base.Awake();
+
 		Instance = this;
 		GuessPageTopButtonGroup.SetActive(false);
 		IdleCheckButton.SetActive(false);
 		GameResultWindow.SetActive(false);
-		VolumeSlider.value = PlayerPrefs.GetFloat("SoundVolume", 0.5f);
-		VolumeText.text = ((int)(VolumeSlider.value * 100)).ToString();
 	}
 
     // Update is called once per frame
-    void Update()
+    protected override void Update()
     {
-		if (needUpdate)
-			UpdateDataReal();
+		base.Update();
 
 		// 出題時沒有選擇輸入框直接按 Enter 視同鎖定 (非網頁版輸入框 enter 當下會馬上觸發這邊，所以要擋同 frame)
 		if (Time.frameCount != assignQuestionFrame && GameData.Instance.CurrentState == GameState.PREPARING && Input.GetKeyDown(KeyCode.Return))
 			ClickAssignQuestion(2);
 	}
 
-	void OnDestroy()
+	protected override void OnDestroy()
 	{
+		base.OnDestroy();
 		Instance = null;
-		PlayerPrefs.SetFloat("SoundVolume", VolumeSlider.value);
 	}
 
-	private void UpdateDataReal()
+	protected override void UpdateDataReal()
 	{
-		UpdatePlayerInfo();
-		UpdateUserInfo();
+		base.UpdateDataReal();
+
 		UpdateMiddlePage();
-		UpdateChatList();
-		UpdateEventList();
 		UpdateSelfGuessRecord();
 		UpdateCurrentPlayerGuessRecord();
-		UpdateStartButton();
-
-		needUpdate = false;
-	}
-	public void UpdateData()
-	{
-		needUpdate = true;
-	}
-
-	public void UpdatePlayerInfo()
-	{
-		int idx = 0;
-		if (GameData.Instance.CurrentState == GameState.WAITING)
-		{
-			foreach (var player in GameData.Instance.PlayerDatas.Values)
-			{
-				PlayerInfo obj;
-				if (idx >= PlayerList.Count)
-				{
-					obj = Instantiate(PlayerList[0]);
-					obj.transform.SetParent(PlayerList[0].transform.parent, false);
-					PlayerList.Add(obj);
-				}
-				else
-				{
-					obj = PlayerList[idx];
-				}
-
-				obj.gameObject.SetActive(true);
-				obj.UpdateData(player);
-				idx++;
-			}
-		}
-		else
-		{
-			foreach (var uid in GameData.Instance.PlayerOrder)
-			{
-				if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
-					continue;
-
-				PlayerInfo obj;
-				if (idx >= PlayerList.Count)
-				{
-					obj = Instantiate(PlayerList[0]);
-					obj.transform.SetParent(PlayerList[0].transform.parent, false);
-					PlayerList.Add(obj);
-				}
-				else
-				{
-					obj = PlayerList[idx];
-				}
-
-				obj.gameObject.SetActive(true);
-				PlayerList[idx].UpdateData(player);
-				idx++;
-			}
-		}
-		// 關閉未使用的物件
-		while (idx < PlayerList.Count)
-			PlayerList[idx++].gameObject.SetActive(false);
-
-		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
-		JoinButton.interactable = isJoined || GameData.Instance.CurrentState == GameState.WAITING;
-		JoinButtonText.text = isJoined ? "離開遊戲" : "加入遊戲";
-	}
-
-	public void UpdateUserInfo()
-	{
-		int idx = 0;
-		foreach (var user in GameData.Instance.UserDatas.Values)
-		{
-			// 還沒取名字的忽略不顯示
-			if (user.Name == "")
-				continue;
-
-			UserInfo obj;
-			if (idx >= UserList.Count)
-			{
-				obj = Instantiate(UserList[0]);
-				obj.transform.SetParent(UserList[0].transform.parent, false);
-				UserList.Add(obj);
-			}
-			else
-			{
-				obj = UserList[idx];
-			}
-			obj.gameObject.SetActive(true);
-			obj.UpdateData(user);
-			idx++;
-		}
-		// 關閉未使用的物件
-		while (idx < UserList.Count)
-			UserList[idx++].gameObject.SetActive(false);
 	}
 
 	private void SetGuessingPlayerBaseInfo()
 	{
 		ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
 		bool isSelfGuessing = guessingPlayerUID == GameData.Instance.SelfUID;
+		GuessWordPlayerData player = GameData.Instance.PlayerDatas[guessingPlayerUID] as GuessWordPlayerData;
 
 		GuessingPlayer.text = $"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 的回合";
 		GuessingQuestionText.gameObject.SetActive(!isSelfGuessing);
-		GuessingQuestionText.text = GameData.Instance.PlayerDatas[guessingPlayerUID].Question;
+		GuessingQuestionText.text = player.Question;
 	}
 
 	public void UpdateMiddlePage()
@@ -304,20 +174,6 @@ public class GamePage : MonoBehaviour
 		}
 	}
 
-	public void UpdateChatList(bool isNewMessage = false)
-	{
-		ChatList.UpdateData(GameData.Instance.ChatRecord);
-		if (isNewMessage)
-			ChatList.MoveToLast();
-	}
-
-	public void UpdateEventList(bool isNewRecord = false)
-	{
-		EventList.UpdateData(GameData.Instance.EventRecord);
-		if (isNewRecord)
-			EventList.MoveToLast();
-	}
-
 	public void UpdateSelfGuessRecord(bool isNewRecord = false)
 	{
 		if (GameData.Instance.CurrentState == GameState.WAITING)
@@ -329,7 +185,8 @@ public class GamePage : MonoBehaviour
 			return;
 		}
 
-		GuessRecord.UpdateData(player.GuessHistory);
+		GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
+		GuessRecord.UpdateData(gwPlayer.GuessHistory);
 		if (isNewRecord)
 			GuessRecord.MoveToLast();
 	}
@@ -346,56 +203,19 @@ public class GamePage : MonoBehaviour
 			return;
 		}
 
+		GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
 		CurrentPlayerGuessRecordTitle.text = $"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color>的猜測記錄";
-		CurrentPlayerGuessRecord.UpdateData(player.GuessHistory);
+		CurrentPlayerGuessRecord.UpdateData(gwPlayer.GuessHistory);
 		if (isNewRecord)
 			CurrentPlayerGuessRecord.MoveToLast();
 	}
 
-	public void UpdateStartButton()
+	public override void StartCountdown(int seconds)
 	{
-		if (GameData.Instance.CurrentState == GameState.WAITING)
-		{
-			StartButton.interactable = true;
-			StartButtonText.text = GameData.Instance.IsCountingDownStart ? "取消開始" : "開始遊戲";
-		}
-		else
-		{
-			StartButtonText.text = "遊戲中";
-			StartButton.interactable = false;
-		}
-	}
+		base.StartCountdown(seconds);
 
-	private IEnumerator Countdown(int seconds)
-	{
-		while (seconds > 0)
-		{
-			StartCountdownText.text = $"遊戲開始倒數 {seconds} 秒";
-			PlaySound("clock");
-			yield return new WaitForSeconds(1f);
-			seconds--;
-		}
-		StartCountdownText.text = "";
-		countdownCoroutine = null;
-	}
-
-	public void StartCountdown(int seconds)
-	{
 		// 開始倒數就自動關閉上一場的結果顯示
-		GameResultWindow.SetActive(false);
-
-		countdownCoroutine = Countdown(seconds);
-		StartCoroutine(countdownCoroutine);
-	}
-
-	public void StopCountdown()
-	{
-		if (countdownCoroutine != null)
-		{
-			StopCoroutine(countdownCoroutine);
-			StartCountdownText.text = "";
-			countdownCoroutine = null;
-		}
+		ClickCloseResult();
 	}
 
 	public void ResetTempLeaveToggle()
@@ -403,41 +223,9 @@ public class GamePage : MonoBehaviour
 		TempLeaveToggle.isOn = false;
 	}
 
-	public void ShowPopupImage(string filename)
-	{
-		if (ImagePopup != null)
-			ImagePopup.ShowImage(filename);
-		else
-			Debug.LogWarning("PopupImage is not assigned.");
-	}
-
-	public void ShowPopupMessage(string message)
-	{
-		if (MessagePopup != null)
-			MessagePopup.ShowMessage(message);
-		else
-			Debug.LogWarning("PopupMessage is not assigned.");
-	}
-
-	public void PlaySound(string name)
-	{
-		if (SFXPlayer != null)
-		{
-			AudioClip clip = Resources.Load<AudioClip>($"Sounds/{name}");
-			if (clip != null)
-				SFXPlayer.PlayOneShot(clip);
-			else
-				Debug.LogWarning($"Audio clip '{name}' not found.");
-		}
-		else
-		{
-			Debug.LogWarning("SFXPlayer is not assigned.");
-		}
-	}
-
 	public void ShowPlayerHistoryRecord(ushort uid)
 	{
-		if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+		if (!GameData.Instance.PlayerDatas.ContainsKey(uid))
 		{
 			ShowPopupMessage("玩家資料不存在");
 			return;
@@ -501,7 +289,7 @@ public class GamePage : MonoBehaviour
 	public void ShowGameResult()
 	{
 		List<Tuple<ushort, ushort>> resultList = new List<Tuple<ushort, ushort>>();
-		foreach (var player in GameData.Instance.PlayerDatas.Values)
+		foreach (GuessWordPlayerData player in GameData.Instance.PlayerDatas.Values)
 			resultList.Add(new Tuple<ushort, ushort>(player.UID, (ushort)player.SuccessRound));
 		// 按照成功回合由低到高排序
 		resultList.Sort((a, b) => a.Item2.CompareTo(b.Item2));
@@ -530,43 +318,6 @@ public class GamePage : MonoBehaviour
 
 		GameResultText.text = resultText;
 		GameResultWindow.SetActive(true);
-	}
-
-	public void ClickCopyRoomID()
-	{
-		ShowPopupMessage("已將房號複製到剪貼簿");
-#if !UNITY_WEBGL || UNITY_EDITOR
-		UniClipboard.SetText(GameData.Instance.RoomID.ToString());
-#else
-		WebGLCopyAndPaste.WebGLCopyAndPasteAPI.CopyToClipboard(GameData.Instance.RoomID.ToString());
-#endif
-	}
-
-	public void ClickJoinGame()
-	{
-		bool isJoined = GameData.Instance.PlayerDatas.ContainsKey(GameData.Instance.SelfUID);
-		if (isJoined)
-			NetManager.Instance.SendLeaveGame();
-		else
-			NetManager.Instance.SendJoinGame();
-	}
-
-	public void ClickLeaveRoom()
-	{
-		NetManager.Instance.SendLeaveRoom();
-		SceneManager.LoadScene("RoomScene");
-	}
-
-	public void ClickStartGame()
-	{
-		if (GameData.Instance.IsCountingDownStart)
-			NetManager.Instance.SendCancelStart();
-		else if (!GameData.Instance.IsPlayer())
-			ShowPopupMessage("須先加入遊戲才能進行操作");
-		else if (GameData.Instance.PlayerDatas.Count < 2)
-			ShowPopupMessage("至少需要兩名玩家才能開始遊戲");
-		else
-			NetManager.Instance.SendStart();
 	}
 
 	// mode = 0:輸入框 1:展示按鈕 2:鎖定按鈕
@@ -648,35 +399,8 @@ public class GamePage : MonoBehaviour
 		HiddleChatToggleText.text = isHidden ? "密電" : "文本";
 	}
 
-	public void ClickSendChat()
+	protected override ushort GetHideChatUID()
 	{
-		string processedMessage = ChatInput.text.Trim();
-		if (processedMessage == "")
-			return;
-
-		byte[] encodedMessage = System.Text.Encoding.UTF8.GetBytes(processedMessage);
-		if (encodedMessage.Length > 255)
-		{
-			ShowPopupMessage("訊息內容過長");
-			return;
-		}
-
-		ushort hideUID = HiddleChatToggle.isOn ? GameData.Instance.GetCurrentPlayerUID() : (ushort)0;
-		NetManager.Instance.SendChatMessage(encodedMessage, hideUID);
-		ChatInput.text = "";
-		ChatInput.ActivateInputField();
-	}
-
-	public void OnVolumeChanged()
-	{
-		if (SFXPlayer != null)
-		{
-			SFXPlayer.volume = VolumeSlider.value;
-			VolumeText.text = ((int)(VolumeSlider.value * 100)).ToString();
-		}
-		else
-		{
-			Debug.LogWarning("SFXPlayer is not assigned.");
-		}
+		return HiddleChatToggle.isOn ? GameData.Instance.GetCurrentPlayerUID() : (ushort)0;
 	}
 }

@@ -43,7 +43,9 @@ public enum PROTOCOL_SERVER
 	SKIP_GUESS,
 	VERSION,
 	ROOM_ID,
+	SETTINGS,
 	UID,
+	POSE_NUMBER,
 }
 
 public class NetPacket
@@ -247,7 +249,7 @@ public partial class NetManager
 		for (int i = 0; i < playerCount; i++)
 		{
 			ushort uid = reader.ReadUInt16();
-			PlayerData player = new PlayerData { UID = uid };
+			GuessWordPlayerData player = new GuessWordPlayerData { UID = uid };
 			player.Question = reader.ReadString();
 			byte historyCount = reader.ReadByte();
 			for (int j = 0; j < historyCount; j++)
@@ -280,8 +282,8 @@ public partial class NetManager
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
-			GamePage.Instance.UpdateData();
+		if (GuessWordGamePage.Instance != null)
+			GuessWordGamePage.Instance.UpdateData();
 	}
 
 	private void InitArrangeNumberData(ByteReader reader)
@@ -340,10 +342,10 @@ public partial class NetManager
 		user.Name = reader.ReadString();
 		GameData.Instance.UserDatas[user.UID] = user;
 
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdatePlayerInfo();
-			GamePage.Instance.UpdateUserInfo();
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
+			GuessWordGamePage.Instance.UpdateUserInfo();
 		}
 	}
 	private void OnUserDisconnect(NetPacket packet)
@@ -357,10 +359,10 @@ public partial class NetManager
 		}
 
 		// 更新使用者名稱
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdatePlayerInfo();
-			GamePage.Instance.UpdateUserInfo();
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
+			GuessWordGamePage.Instance.UpdateUserInfo();
 		}
 	}
 	private void OnUserRename(NetPacket packet)
@@ -371,25 +373,25 @@ public partial class NetManager
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
 			GameData.Instance.UserDatas[uid].Name = name;
 
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdatePlayerInfo();
-			GamePage.Instance.UpdateUserInfo();
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
+			GuessWordGamePage.Instance.UpdateUserInfo();
 		}
 	}
 	private void OnPlayerJoin(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
-		GameData.Instance.PlayerDatas[uid] = new PlayerData { UID = uid };
+		GameData.Instance.PlayerDatas[uid] = new GuessWordPlayerData { UID = uid };
 
 		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 加入了遊戲");
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdatePlayerInfo();
-			GamePage.Instance.PlaySound("pop_up");
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
+			GuessWordGamePage.Instance.PlaySound("pop_up");
 		}
 	}
 	private void OnPlayerLeave(NetPacket packet)
@@ -404,14 +406,14 @@ public partial class NetManager
 		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 離開了遊戲");
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
 			if (GameData.Instance.CurrentState == GameState.WAITING)
-				GamePage.Instance.UpdatePlayerInfo();
+				GuessWordGamePage.Instance.UpdatePlayerInfo();
 			else
-				GamePage.Instance.UpdateData();
+				GuessWordGamePage.Instance.UpdateData();
 
-			GamePage.Instance.PlaySound("pop_off");
+			GuessWordGamePage.Instance.PlaySound("pop_off");
 		}
 	}
 	private void OnStartCountdown(NetPacket packet)
@@ -421,20 +423,20 @@ public partial class NetManager
 		if (GameData.Instance.IsCountingDownStart)
 		{
 			byte countdownTime = reader.ReadByte();
-			if (GamePage.Instance != null)
-				GamePage.Instance.StartCountdown(countdownTime);
+			if (GuessWordGamePage.Instance != null)
+				GuessWordGamePage.Instance.StartCountdown(countdownTime);
 			GameData.Instance.AddEventRecord($"遊戲將於 {countdownTime} 秒後開始");
 		}
 		else
 		{
-			if (GamePage.Instance != null)
-				GamePage.Instance.StopCountdown();
+			if (GuessWordGamePage.Instance != null)
+				GuessWordGamePage.Instance.StopCountdown();
 			GameData.Instance.AddEventRecord("已取消遊戲開始倒數");
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
-			GamePage.Instance.UpdateStartButton();
+		if (GuessWordGamePage.Instance != null)
+			GuessWordGamePage.Instance.UpdateStartButton();
 	}
 	private void OnGameStart(NetPacket packet)
 	{
@@ -444,13 +446,13 @@ public partial class NetManager
 		GameData.Instance.AddEventRecord("遊戲開始");
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.StopCountdown();
-			GamePage.Instance.ResetTempLeaveToggle();
-			GamePage.Instance.UpdateData();
+			GuessWordGamePage.Instance.StopCountdown();
+			GuessWordGamePage.Instance.ResetTempLeaveToggle();
+			GuessWordGamePage.Instance.UpdateData();
 
-			GamePage.Instance.PlaySound("ding");
+			GuessWordGamePage.Instance.PlaySound("ding");
 		}
 	}
 	private void OnGameStateChanged(NetPacket packet)
@@ -470,13 +472,13 @@ public partial class NetManager
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdateData();
+			GuessWordGamePage.Instance.UpdateData();
 			if (GameData.Instance.CurrentState == GameState.GUESSING && GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID)
-				GamePage.Instance.StartIdleCheck();
+				GuessWordGamePage.Instance.StartIdleCheck();
 			if (originState == GameState.PREPARING && GameData.Instance.CurrentState == GameState.GUESSING)
-				GamePage.Instance.PlaySound("ding");
+				GuessWordGamePage.Instance.PlaySound("ding");
 		}
 	}
 	private void OnUpdatePlayerOrder(NetPacket packet)
@@ -496,14 +498,14 @@ public partial class NetManager
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdatePlayerInfo();
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
 			// 猜題玩家更換時強制改顯示該玩家的歷史紀錄
 			if (GameData.Instance.GuessingPlayerIndex < GameData.Instance.PlayerOrder.Count)
 			{
 				ushort currentPlayerUID = GameData.Instance.GetCurrentPlayerUID();
-				GamePage.Instance.ShowPlayerHistoryRecord(currentPlayerUID);
+				GuessWordGamePage.Instance.ShowPlayerHistoryRecord(currentPlayerUID);
 			}
 		}
 	}
@@ -517,9 +519,11 @@ public partial class NetManager
 			// 提示自身題目已經出好了
 			if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 			{
+				GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
+
 				string colorFormat = isLocked ? "yellow" : "blue";
-				player.Question = $"<color={colorFormat}>答案已屏蔽</color>";
-				player.QuestionLocked = isLocked;
+				gwPlayer.Question = $"<color={colorFormat}>答案已屏蔽</color>";
+				gwPlayer.QuestionLocked = isLocked;
 			}
 		}
 		else
@@ -527,21 +531,23 @@ public partial class NetManager
 			string question = reader.ReadString();
 			if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 			{
-				player.Question = question;
-				player.QuestionLocked = isLocked;
+				GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
+
+				gwPlayer.Question = question;
+				gwPlayer.QuestionLocked = isLocked;
 			}
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdatePlayerInfo();
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
 			if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
 			{
 				if (isLocked)
-					GamePage.Instance.ShowPopupMessage($"<color=yellow>{user.Name}</color> 的題目已指派");
+					GuessWordGamePage.Instance.ShowPopupMessage($"<color=yellow>{user.Name}</color> 的題目已指派");
 				else
-					GamePage.Instance.ShowPopupMessage($"<color=#00aa00>{user.Name}</color> 的題目已宣告");
+					GuessWordGamePage.Instance.ShowPopupMessage($"<color=#00aa00>{user.Name}</color> 的題目已宣告");
 			}
 		}
 	}
@@ -553,7 +559,7 @@ public partial class NetManager
 		string answer = reader.ReadString();
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 		{
-			PlayerData player = GameData.Instance.PlayerDatas[uid];
+			GuessWordPlayerData player = GameData.Instance.PlayerDatas[uid] as GuessWordPlayerData;
 			player.SuccessRound = successRound;
 			player.Question = $"<color=yellow>{answer}</color>"; // 更新玩家的名詞為答案
 		}
@@ -566,13 +572,13 @@ public partial class NetManager
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdateData();
-			GamePage.Instance.ShowPopupMessage(successMessage);
+			GuessWordGamePage.Instance.UpdateData();
+			GuessWordGamePage.Instance.ShowPopupMessage(successMessage);
 
 			bool isEnding = true;
-			foreach (PlayerData player in GameData.Instance.PlayerDatas.Values)
+			foreach (GuessWordPlayerData player in GameData.Instance.PlayerDatas.Values)
 			{
 				if (player.SuccessRound == 0)
 				{
@@ -585,13 +591,13 @@ public partial class NetManager
 			{
 				if (successRound > 0)
 				{
-					GamePage.Instance.PlaySound("boom");
+					GuessWordGamePage.Instance.PlaySound("boom");
 					int randomImage = UnityEngine.Random.Range(1, 4);
-					GamePage.Instance.ShowPopupImage($"brain{randomImage}");
+					GuessWordGamePage.Instance.ShowPopupImage($"brain{randomImage}");
 				}
 				else
 				{
-					GamePage.Instance.PlaySound("bye");
+					GuessWordGamePage.Instance.PlaySound("bye");
 				}
 			}
 		}
@@ -608,12 +614,12 @@ public partial class NetManager
 			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 提問他的名詞是否為 <color=blue>{GameData.Instance.VotingGuess}</color>");
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdateData();
-			GamePage.Instance.PlaySound("drum");
+			GuessWordGamePage.Instance.UpdateData();
+			GuessWordGamePage.Instance.PlaySound("drum");
 			if (guessingPlayerUID != GameData.Instance.SelfUID)
-				GamePage.Instance.StartIdleCheck();
+				GuessWordGamePage.Instance.StartIdleCheck();
 		}
 	}
 	private void OnPlayerVoted(NetPacket packet)
@@ -634,14 +640,14 @@ public partial class NetManager
 			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 表示 {voteText}");
 
 		// 更新介面
-		if (GamePage.Instance != null)
-			GamePage.Instance.UpdatePlayerInfo();
+		if (GuessWordGamePage.Instance != null)
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnGuessAgainRequired(NetPacket packet)
 	{
 		GameData.Instance.AddEventRecord("沒有人表示意見，要求重新提出猜測");
-		if (GamePage.Instance != null)
-			GamePage.Instance.PlaySound("huh");
+		if (GuessWordGamePage.Instance != null)
+			GuessWordGamePage.Instance.PlaySound("huh");
 	}
 	private void OnGuessRecordAdded(NetPacket packet)
 	{
@@ -651,7 +657,7 @@ public partial class NetManager
 		byte result = reader.ReadByte();
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 		{
-			PlayerData player = GameData.Instance.PlayerDatas[uid];
+			GuessWordPlayerData player = GameData.Instance.PlayerDatas[uid] as GuessWordPlayerData;
 			player.AddGuessRecord(guess, result);
 		}
 
@@ -664,19 +670,19 @@ public partial class NetManager
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
 			if (uid == GameData.Instance.SelfUID)
-				GamePage.Instance.UpdateSelfGuessRecord(true);
-			GamePage.Instance.UpdateCurrentPlayerGuessRecord(true);
+				GuessWordGamePage.Instance.UpdateSelfGuessRecord(true);
+			GuessWordGamePage.Instance.UpdateCurrentPlayerGuessRecord(true);
 
 			if (messageText != null)
-				GamePage.Instance.ShowPopupMessage(messageText);
+				GuessWordGamePage.Instance.ShowPopupMessage(messageText);
 
 			if (result == 1)
-				GamePage.Instance.PlaySound("true");
+				GuessWordGamePage.Instance.PlaySound("true");
 			else
-				GamePage.Instance.PlaySound("bruh");
+				GuessWordGamePage.Instance.PlaySound("bruh");
 		}
 	}
 	private void OnGameEnd(NetPacket packet)
@@ -688,13 +694,13 @@ public partial class NetManager
 		GameData.Instance.AddEventRecord(isForceEnd ? "遊戲已被中斷" : "遊戲結束");
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdateData();
+			GuessWordGamePage.Instance.UpdateData();
 			if (!isForceEnd)
 			{
-				GamePage.Instance.ShowGameResult();
-				GamePage.Instance.PlaySound("end");
+				GuessWordGamePage.Instance.ShowGameResult();
+				GuessWordGamePage.Instance.PlaySound("end");
 			}
 		}
 	}
@@ -710,8 +716,8 @@ public partial class NetManager
 		{
 			string fullMessage = $"[<color=yellow>{user.Name}</color>] {message}";
 			GameData.Instance.AddChatRecord(fullMessage, isHidden == 1);
-			if (GamePage.Instance != null)
-				GamePage.Instance.ShowPopupMessage(fullMessage);
+			if (GuessWordGamePage.Instance != null)
+				GuessWordGamePage.Instance.ShowPopupMessage(fullMessage);
 		}
 	}
 
@@ -723,8 +729,8 @@ public partial class NetManager
 		{
 			string message = $"<color=yellow>{user.Name}</color> 跳過猜題";
 			GameData.Instance.AddEventRecord(message);
-			if (GamePage.Instance != null)
-				GamePage.Instance.ShowPopupMessage(message);
+			if (GuessWordGamePage.Instance != null)
+				GuessWordGamePage.Instance.ShowPopupMessage(message);
 		}
 	}
 

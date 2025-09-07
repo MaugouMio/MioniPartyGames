@@ -29,15 +29,20 @@ public class UserData
 	public string GetOriginalName() { return name; }
 }
 
-public class PlayerData
+public abstract class PlayerData
 {
 	public ushort UID { get; set; } = 0;
+	public abstract void Reset();
+}
+
+public class GuessWordPlayerData : PlayerData
+{
 	public string Question { get; set; } = "";
 	public bool QuestionLocked { get; set; } = false;
 	public short SuccessRound { get; set; } = 0;
 	public List<string> GuessHistory { get; set; } = new List<string>();
 
-	public void Reset()
+	public override void Reset()
 	{
 		Question = "";
 		QuestionLocked = false;
@@ -51,6 +56,18 @@ public class PlayerData
 			GuessHistory.Add($"<color=#00ba00>✓</color> 是{guess}");
 		else
 			GuessHistory.Add($"<color=#ba0000>×</color> 不是{guess}");
+	}
+}
+
+public class ArrangeNumberPlayerData : PlayerData
+{
+	public List<int> LeftNumbers { get; set; } = new List<int>();
+	public bool IsUrgent = false;
+
+	public override void Reset()
+	{
+		LeftNumbers.Clear();
+		IsUrgent = false;
 	}
 }
 
@@ -102,7 +119,6 @@ public class GameData
 
 	public void Reset()
 	{
-		SelfUID = 0;
 		UserDatas.Clear();
 		PlayerDatas.Clear();
 		ChatRecord.Clear();
@@ -115,6 +131,7 @@ public class GameData
 		Votes.Clear();
 		ResetGame();
 	}
+
 	public void ResetGame()
 	{
 		IsCountingDownStart = false;
@@ -139,8 +156,8 @@ public class GameData
 		else
 			ChatRecord.Enqueue(message);
 
-		if (GamePage.Instance != null)
-			GamePage.Instance.UpdateChatList(true);
+		if (GuessWordGamePage.Instance != null)
+			GuessWordGamePage.Instance.UpdateChatList(true);
 	}
 
 	public void AddEventRecord(string eventText)
@@ -151,8 +168,8 @@ public class GameData
 		string timeText = DateTime.Now.ToString("HH:mm:ss");
 		EventRecord.Enqueue($"[{timeText}] {eventText}");
 
-		if (GamePage.Instance != null)
-			GamePage.Instance.UpdateEventList(true);
+		if (GuessWordGamePage.Instance != null)
+			GuessWordGamePage.Instance.UpdateEventList(true);
 	}
 
 	public void AddUserName(string name)
@@ -177,6 +194,12 @@ public class GameData
 		return PlayerDatas.ContainsKey(SelfUID);
 	}
 
+	public bool CanJoinGame()
+	{
+		// TODO: 根據不同遊戲類型判斷
+		return CurrentState == GameState.WAITING;
+	}
+
 	public bool IsUserNameDuplicated(string name)
 	{
 		if (userNameCount.ContainsKey(name))
@@ -188,7 +211,11 @@ public class GameData
 	{
 		foreach (var player in PlayerDatas.Values)
 		{
-			if (player.UID != SelfUID && player.SuccessRound == 0)
+			if (player is not GuessWordPlayerData)
+				continue;
+
+			GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
+			if (gwPlayer.UID != SelfUID && gwPlayer.SuccessRound == 0)
 				return false;
 		}
 		return true;

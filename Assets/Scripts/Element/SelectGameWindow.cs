@@ -23,7 +23,7 @@ public class SelectGameWindow : MonoBehaviour
 		int index = 0;
 		foreach (var type in Enum.GetValues(typeof(GameType)))
 		{
-			if (gameTypeButtons.Count < index)
+			if (gameTypeButtons.Count <= index)
 				gameTypeButtons.Add(Instantiate(gameTypeButtons[0], gameTypeButtons[0].transform.parent));
 
 			gameTypeButtons[index++].SetGameType((GameType)type);
@@ -32,8 +32,8 @@ public class SelectGameWindow : MonoBehaviour
 
 	void Start()
 	{
-		// 預設選猜名詞遊戲
-		SelectGameType(GameType.GUESS_WORD);
+		// 預設選第一種遊戲
+		gameTypeButtons[0].Select();
 	}
 
 	public void OnConfirm()

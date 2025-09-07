@@ -8,15 +8,18 @@ public class GameTypeButton : MonoBehaviour
 	[SerializeField]
 	private SelectGameWindow parentSelectGameWindow;
 
+	private Toggle toggle;
 	private Text gameName;
 
 	void Awake()
     {
+		toggle = GetComponent<Toggle>();
 		gameName = GetComponentInChildren<Text>();
 	}
 
 	public void SetGameType(GameType gameType)
 	{
+		this.gameType = gameType;
 		switch (gameType)
 		{
 			case GameType.GUESS_WORD:
@@ -29,6 +32,11 @@ public class GameTypeButton : MonoBehaviour
 				Debug.LogError("GameTypeButton::SetGameType Unknown game type");
 				break;
 		}
+	}
+
+	public void Select()
+	{
+		toggle.isOn = true;
 	}
 
 	public void OnToggle(bool isOn)
