@@ -18,6 +18,10 @@ public enum PROTOCOL_CLIENT
 	CREATE_ROOM,
 	JOIN_ROOM,
 	LEAVE_ROOM,
+	SET_MAX_NUMBER,
+	SET_NUMBER_GROUP_COUNT,
+	SET_NUMBER_PER_PLAYER,
+	POSE_NUMBER,
 }
 
 public enum PROTOCOL_SERVER
@@ -745,6 +749,15 @@ public partial class NetManager
 
 	// =========================================================
 
+	private void SendVersionCheck()
+	{
+		ByteWriter writer = new ByteWriter();
+		writer.WriteUInt32(GameData.GAME_VERSION);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VERSION, data);
+		SendPacket(packet);
+	}
 	public void SendName(byte[] encodedName)
 	{
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.NAME, encodedName);
@@ -814,7 +827,6 @@ public partial class NetManager
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VOTE, data);
 		SendPacket(packet);
 	}
-
 	public void SendChatMessage(byte[] encodedMessage, ushort hideUID)
 	{
 		ByteWriter writer = new ByteWriter();
@@ -825,20 +837,41 @@ public partial class NetManager
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CHAT, data);
 		SendPacket(packet);
 	}
-
 	public void SendGiveUp()
 	{
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GIVE_UP, new byte[0]);
 		SendPacket(packet);
 	}
-
-	private void SendVersionCheck()
+	public void SendSetMaxNumber(ushort number)
 	{
 		ByteWriter writer = new ByteWriter();
-		writer.WriteUInt32(GameData.GAME_VERSION);
+		writer.WriteUInt16(number);
 
 		byte[] data = writer.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VERSION, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_MAX_NUMBER, data);
+		SendPacket(packet);
+	}
+	public void SendSetNumberGroupCount(byte count)
+	{
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte(count);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_MAX_NUMBER, data);
+		SendPacket(packet);
+	}
+	public void SendSetNumberPerPlayer(byte count)
+	{
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte(count);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_MAX_NUMBER, data);
+		SendPacket(packet);
+	}
+	public void SendPoseNumber()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.POSE_NUMBER, new byte[0]);
 		SendPacket(packet);
 	}
 }
