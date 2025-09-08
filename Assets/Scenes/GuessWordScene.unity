@@ -2720,6 +2720,17 @@ MonoBehaviour:
   - {fileID: 234406654}
   JoinButton: {fileID: 100328149}
   JoinButtonText: {fileID: 77249327}
+  VolumeSlider: {fileID: 255891068}
+  VolumeText: {fileID: 1866863131}
+  EventList: {fileID: 1239804062}
+  ChatList: {fileID: 1062501265}
+  ChatInput: {fileID: 1916966487}
+  StartButton: {fileID: 1234196060}
+  StartButtonText: {fileID: 870754687}
+  StartCountdownText: {fileID: 593758928}
+  ImagePopup: {fileID: 1839871208}
+  MessagePopup: {fileID: 621927011}
+  SFXPlayer: {fileID: 1348430745}
   IdlePage: {fileID: 501452885}
   QuestionPage: {fileID: 1529769693}
   PlayerQuestionPage: {fileID: 1389245007}
@@ -2739,24 +2750,13 @@ MonoBehaviour:
   GuessConfirmButtons: {fileID: 1590345489}
   PassGuessButton: {fileID: 29564252}
   VoteButtons: {fileID: 358351015}
-  VolumeSlider: {fileID: 255891068}
-  VolumeText: {fileID: 1866863131}
-  EventList: {fileID: 1239804062}
-  ChatList: {fileID: 1062501265}
   HiddleChatToggle: {fileID: 1566996071}
   HiddleChatToggleText: {fileID: 36144990}
-  ChatInput: {fileID: 1916966487}
   GuessRecord: {fileID: 1971162831}
   CurrentPlayerGuessRecordTitle: {fileID: 2042091373}
   CurrentPlayerGuessRecord: {fileID: 258544233}
-  StartButton: {fileID: 1234196060}
-  StartButtonText: {fileID: 870754687}
   GameResultWindow: {fileID: 1922015890}
   GameResultText: {fileID: 1770478059}
-  StartCountdownText: {fileID: 593758928}
-  ImagePopup: {fileID: 1839871208}
-  MessagePopup: {fileID: 621927011}
-  SFXPlayer: {fileID: 1348430745}
 --- !u!1 &518894369
 GameObject:
   m_ObjectHideFlags: 0
@@ -4875,7 +4875,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 230, y: -37.085648}
+  m_AnchoredPosition: {x: 230, y: -36.73029}
   m_SizeDelta: {x: 420, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &735649512
@@ -5249,7 +5249,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 122087537}
   m_HandleRect: {fileID: 122087536}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -6917,8 +6917,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 3}
+  m_SizeDelta: {x: 0, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1108490912
 MonoBehaviour:
@@ -6997,7 +6997,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 230, y: -37.085648}
+  m_AnchoredPosition: {x: 230, y: -36.73029}
   m_SizeDelta: {x: 420, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1119032474
@@ -8110,7 +8110,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 230, y: -37.085648}
+  m_AnchoredPosition: {x: 230, y: -36.73029}
   m_SizeDelta: {x: 420, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1236104701
@@ -10251,12 +10251,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6551f0ace38aba5429911df19d6efc90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selfButton: {fileID: 1512444769}
   nameText: {fileID: 1898945744}
+  selfIndicator: {fileID: 1793807249}
+  selfButton: {fileID: 1512444769}
   questionText: {fileID: 658515286}
   voteText: {fileID: 953901141}
   stateMask: {fileID: 1672529905}
-  selfIndicator: {fileID: 1793807249}
 --- !u!114 &1512444769
 MonoBehaviour:
   m_ObjectHideFlags: 0
