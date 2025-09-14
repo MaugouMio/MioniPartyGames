@@ -1,8 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class ArrangeNumberGamePage : GamePage
@@ -29,6 +25,19 @@ public class ArrangeNumberGamePage : GamePage
 
 	[SerializeField]
 	private GameObject PlayingPage;
+	[SerializeField]
+	private Text CurrentNumberText;
+	[SerializeField]
+	private Text LastPlayerText;
+	[SerializeField]
+	private GameObject buttonList;
+	[SerializeField]
+	private GameObject UrgentButton;
+	[SerializeField]
+	private GameObject NotUrgentButton;
+
+	[SerializeField]
+	private TextList SelfNumberList;
 
 	[SerializeField]
 	private GameObject GameResultWindow;
@@ -59,6 +68,7 @@ public class ArrangeNumberGamePage : GamePage
 		base.UpdateDataReal();
 
 		UpdateMiddlePage();
+		UpdateSelfNumberList();
 	}
 
 	private void UpdateMiddlePage()
@@ -72,13 +82,39 @@ public class ArrangeNumberGamePage : GamePage
 				UpdateSettings();
 				break;
 			case ArrangeNumberState.PLAYING:
+				CurrentNumberText.text = GameData.Instance.ArrangeNumberData.CurrentNumber.ToString();
+				LastPlayerText.text = GameData.Instance.ArrangeNumberData.GetLastPlayerName();
+				if (GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData selfPlayer))
 				{
-					// TODO: 更新遊戲中資訊
+					if (selfPlayer is ArrangeNumberPlayerData selfANPlayer)
+					{
+						buttonList.SetActive(true);
+						UrgentButton.SetActive(!selfANPlayer.IsUrgent);
+						NotUrgentButton.SetActive(selfANPlayer.IsUrgent);
+						break;
+					}
 				}
+
+				buttonList.SetActive(false);
 				break;
 			default:
 				break;
 		}
+	}
+
+	private void UpdateSelfNumberList()
+	{
+		if (GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData selfPlayer))
+		{
+			if (selfPlayer is ArrangeNumberPlayerData selfANPlayer)
+			{
+				var stringList = selfANPlayer.LeftNumbers.ConvertAll(x => x.ToString());
+				stringList.Reverse();  // 反轉順序讓小的數字在上面
+				SelfNumberList.UpdateData(stringList);
+				return;
+			}
+		}
+		SelfNumberList.UpdateData(null);
 	}
 
 	public void UpdateSettings()
@@ -178,5 +214,15 @@ public class ArrangeNumberGamePage : GamePage
 			return;
 
 		NetManager.Instance.SendSetNumberPerPlayer(newCount);
+	}
+
+	public void ClickSetUrgent(bool isUrgent)
+	{
+		NetManager.Instance.SendSetUrgent(isUrgent);
+	}
+
+	public void ClickPoseNumber()
+	{
+		NetManager.Instance.SendPoseNumber();
 	}
 }

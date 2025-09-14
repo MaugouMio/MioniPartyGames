@@ -118,13 +118,18 @@ public class ArrangeNumberData
 
 	public ushort LastPlayerUID = 0;
 	public ushort CurrentNumber = 0;
-	public List<ushort> UrgentPlayers = new List<ushort>();
 
 	public void Reset()
 	{
 		LastPlayerUID = 0;
 		CurrentNumber = 0;
-		UrgentPlayers.Clear();
+	}
+
+	public string GetLastPlayerName()
+	{
+		if (!GameData.Instance.UserDatas.TryGetValue(LastPlayerUID, out UserData user))
+			return "";
+		return user.Name;
 	}
 }
 

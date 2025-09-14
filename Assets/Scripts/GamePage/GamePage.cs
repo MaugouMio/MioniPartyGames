@@ -51,6 +51,11 @@ public abstract class GamePage : MonoBehaviour
 		VolumeSlider.value = PlayerPrefs.GetFloat("SoundVolume", 0.5f);
 		VolumeText.text = ((int)(VolumeSlider.value * 100)).ToString();
 
+		if (Instance != null)
+		{
+			Debug.LogError($"Trying to instatiate a new GamePage object {name} while another GamePage object {Instance.name} existing.");
+			Destroy(Instance);
+		}
 		Instance = this;
 	}
 
