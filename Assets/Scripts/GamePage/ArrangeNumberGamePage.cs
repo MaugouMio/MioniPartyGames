@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,6 +26,10 @@ public class ArrangeNumberGamePage : GamePage
 
 	[SerializeField]
 	private GameObject PlayingPage;
+	[SerializeField]
+	private GameObject UrgentPlayersObject;
+	[SerializeField]
+	private TextList UrgentPlayersList;
 	[SerializeField]
 	private Text CurrentNumberText;
 	[SerializeField]
@@ -82,20 +87,7 @@ public class ArrangeNumberGamePage : GamePage
 				UpdateSettings();
 				break;
 			case ArrangeNumberState.PLAYING:
-				CurrentNumberText.text = GameData.Instance.ArrangeNumberData.CurrentNumber.ToString();
-				LastPlayerText.text = GameData.Instance.ArrangeNumberData.GetLastPlayerName();
-				if (GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData selfPlayer))
-				{
-					if (selfPlayer is ArrangeNumberPlayerData selfANPlayer)
-					{
-						buttonList.SetActive(true);
-						UrgentButton.SetActive(!selfANPlayer.IsUrgent);
-						NotUrgentButton.SetActive(selfANPlayer.IsUrgent);
-						break;
-					}
-				}
-
-				buttonList.SetActive(false);
+				UpdatePlayingInfo();
 				break;
 			default:
 				break;
@@ -127,6 +119,33 @@ public class ArrangeNumberGamePage : GamePage
 			NumberGroupCountSettingText.text = "∞";
 
 		NumberPerPlayerSettingText.text = GameData.Instance.ArrangeNumberData.NumberPerPlayer.ToString();
+	}
+
+	private void UpdatePlayingInfo()
+	{
+		CurrentNumberText.text = GameData.Instance.ArrangeNumberData.CurrentNumber.ToString();
+		LastPlayerText.text = GameData.Instance.ArrangeNumberData.GetLastPlayerName();
+
+		List<string> urgentList = new List<string>();
+		foreach (var player in GameData.Instance.PlayerDatas.Values)
+		{
+			if (player is ArrangeNumberPlayerData anPlayer && anPlayer.IsUrgent)
+				urgentList.Add(GameData.Instance.UserDatas[anPlayer.UID].Name);
+		}
+		UrgentPlayersObject.SetActive(urgentList.Count > 0);
+		UrgentPlayersList.UpdateData(urgentList);
+
+		if (GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData selfPlayer))
+		{
+			if (selfPlayer is ArrangeNumberPlayerData selfANPlayer)
+			{
+				buttonList.SetActive(true);
+				UrgentButton.SetActive(!selfANPlayer.IsUrgent);
+				NotUrgentButton.SetActive(selfANPlayer.IsUrgent);
+				return;
+			}
+		}
+		buttonList.SetActive(false);
 	}
 
 	public override void StartCountdown(int seconds)
