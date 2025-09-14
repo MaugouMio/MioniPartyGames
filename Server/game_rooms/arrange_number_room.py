@@ -108,7 +108,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 	async def _request_set_number_group_count(self, uid: int, group_count: int):
 		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
 			return
-		if group_count < 1 or group_count > 50 or group_count == self._number_group_count:
+		if group_count < 0 or group_count > 50 or group_count == self._number_group_count:
 			return
 		if uid not in self._players:
 			return

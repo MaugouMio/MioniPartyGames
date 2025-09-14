@@ -112,6 +112,9 @@ public class GuessWordGameData
 public class ArrangeNumberData
 {
 	public ArrangeNumberState CurrentState { get; set; } = ArrangeNumberState.WAITING;
+	public ushort MaxNumber { get; set; } = 100;
+	public byte NumberGroupCount { get; set; } = 1;
+	public byte NumberPerPlayer { get; set; } = 1;
 
 	public void Reset()
 	{

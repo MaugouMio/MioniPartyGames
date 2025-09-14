@@ -172,6 +172,9 @@ public partial class NetManager
 			case PROTOCOL_SERVER.UID:
 				OnGetUID(packet);
 				break;
+			case PROTOCOL_SERVER.VERSION:
+				OnVersionCheckResult(packet);
+				break;
 			case PROTOCOL_SERVER.INIT:
 				OnInitData(packet);
 				break;
@@ -223,17 +226,17 @@ public partial class NetManager
 			case PROTOCOL_SERVER.GUESS_RECORD:
 				OnGuessRecordAdded(packet);
 				break;
+			case PROTOCOL_SERVER.SKIP_GUESS:
+				OnSkipGuess(packet);
+				break;
 			case PROTOCOL_SERVER.END:
 				OnGameEnd(packet);
 				break;
 			case PROTOCOL_SERVER.CHAT:
 				OnChatMessage(packet);
 				break;
-			case PROTOCOL_SERVER.SKIP_GUESS:
-				OnSkipGuess(packet);
-				break;
-			case PROTOCOL_SERVER.VERSION:
-				OnVersionCheckResult(packet);
+			case PROTOCOL_SERVER.SETTINGS:
+				OnGetSettings(packet);
 				break;
 		}
 	}
@@ -745,6 +748,17 @@ public partial class NetManager
 
 		if (RoomPage.Instance != null)
 			RoomPage.Instance.OnEnterRoom();
+	}
+
+	private void OnGetSettings(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		GameData.Instance.ArrangeNumberData.MaxNumber = reader.ReadUInt16();
+		GameData.Instance.ArrangeNumberData.NumberGroupCount = reader.ReadByte();
+		GameData.Instance.ArrangeNumberData.NumberPerPlayer = reader.ReadByte();
+
+		if (ArrangeNumberGamePage.Instance != null)
+			ArrangeNumberGamePage.Instance.UpdateSettings();
 	}
 
 	// =========================================================
