@@ -1,3 +1,4 @@
+from collections.abc import Collection
 import random
 from typing import cast, override
 
@@ -74,7 +75,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		# 通知所有玩家持有的數字
 		for player in player_list:
 			await self._send_self_numbers(player)
-		await self._broadcast_all_player_numbers_to_spectactors()
+		await self._broadcast_all_player_numbers(self._players.keys())
 
 		return True
 
@@ -89,7 +90,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 				return
 			
 			await self._check_left_numbers()
-	
+
 	async def _check_left_numbers(self):
 		"""檢查是否還有剩餘的數字可以出牌。"""
 		player_list: list[Player] = cast(list[Player], self._players.values())
@@ -157,6 +158,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		# 檢查是不是最小數字的玩家
 		player_list: list[Player] = cast(list[Player], self._players.values())
 		if any(p.numbers[-1] < self._current_number for p in player_list if p.numbers):  # 有人數字更小，爆了
+			await self._broadcast_all_player_numbers()
 			self._reset_game()
 			await self._broadcast_end()
 			return
@@ -240,7 +242,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		packet = network.new_packet(PROTOCOL_SERVER.PLAYER_NUMBERS, data)
 		await self._broadcast(packet, self._players.keys())
 
-	async def _broadcast_all_player_numbers_to_spectactors(self):
+	async def _broadcast_all_player_numbers(self, exclude_clients: Collection[int]):
 		player_list: list[Player] = cast(list[Player], self._players.values())
 
 		data = bytes()
@@ -253,7 +255,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 				data += number.to_bytes(2, byteorder="little")
 		
 		packet = network.new_packet(PROTOCOL_SERVER.PLAYER_NUMBERS, data)
-		await self._broadcast(packet, self._players.keys())
+		await self._broadcast(packet, exclude_clients)
 
 	async def _broadcast_settings(self):
 		data = bytes()

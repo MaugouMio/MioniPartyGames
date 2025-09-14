@@ -28,7 +28,7 @@ public class ArrangeNumberPlayerInfo : PlayerInfo
 		}
 		else
 		{
-			if (GameData.Instance.IsPlayer())
+			if (GameData.Instance.ArrangeNumberData.CurrentState == ArrangeNumberState.PLAYING && GameData.Instance.IsPlayer())
 			{
 				leftNumberText.text = $"<i><color=#999999>剩餘數字{anPlayerData.LeftNumbers.Count}個</color></i>";
 			}

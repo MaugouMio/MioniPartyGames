@@ -212,6 +212,8 @@ public abstract class GamePage : MonoBehaviour
 
 	public virtual void OnStartGame() {}
 
+	public virtual void ShowGameResult() {}
+
 	public void ShowPopupImage(string filename)
 	{
 		if (ImagePopup != null)

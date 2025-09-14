@@ -45,6 +45,8 @@ public class ArrangeNumberGamePage : GamePage
 	private TextList SelfNumberList;
 
 	[SerializeField]
+	private GIFController ExplosionGIF;
+	[SerializeField]
 	private GameObject GameResultWindow;
 	[SerializeField]
 	private Text GameResultText;
@@ -66,6 +68,8 @@ public class ArrangeNumberGamePage : GamePage
 		base.Awake();
 
 		GameResultWindow.SetActive(false);
+		ExplosionGIF.gameObject.SetActive(false);
+		ExplosionGIF.onPlayEnd = () => OpenResultWindow(false);
 	}
 
 	protected override void UpdateDataReal()
@@ -156,10 +160,24 @@ public class ArrangeNumberGamePage : GamePage
 		ClickCloseResult();
 	}
 
-	public void ShowGameResult()
+	private void OpenResultWindow(bool isSuccess)
 	{
-		//GameResultText.text = resultText;
+		GameResultText.text = isSuccess ? "<color=green>成功</color>" : "<color=red>失敗</color>";
 		GameResultWindow.SetActive(true);
+	}
+
+	public override void ShowGameResult()
+	{
+		if (GameData.Instance.ArrangeNumberData.IsAllNumbersPosed())
+		{
+			OpenResultWindow(true);
+			PlaySound("end");
+		}
+		else
+		{
+			ExplosionGIF.gameObject.SetActive(true);
+			PlaySound("explosion");
+		}
 	}
 
 	public void ClickCloseResult()

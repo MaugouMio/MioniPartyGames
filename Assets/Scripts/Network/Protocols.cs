@@ -730,19 +730,27 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		bool isForceEnd = reader.ReadByte() == 1;
-		GameData.Instance.GuessWordData.CurrentState = GuessWordState.WAITING;
+		switch (GameData.Instance.CurrentGameType)
+		{
+			case GameType.GUESS_WORD:
+				GameData.Instance.GuessWordData.CurrentState = GuessWordState.WAITING;
+				break;
+			case GameType.ARRANGE_NUMBER:
+				GameData.Instance.ArrangeNumberData.CurrentState = ArrangeNumberState.WAITING;
+				break;
+			default:
+				Debug.LogError("OnGameEnd: Unknown game type.");
+				return;
+		}
 
 		GameData.Instance.AddEventRecord(isForceEnd ? "遊戲已被中斷" : "遊戲結束");
 
 		// 更新介面
-		if (GuessWordGamePage.Instance != null)
+		if (GamePage.Instance != null)
 		{
-			GuessWordGamePage.Instance.UpdateData();
+			GamePage.Instance.UpdateData();
 			if (!isForceEnd)
-			{
-				GuessWordGamePage.Instance.ShowGameResult();
-				GuessWordGamePage.Instance.PlaySound("end");
-			}
+				GamePage.Instance.ShowGameResult();
 		}
 	}
 

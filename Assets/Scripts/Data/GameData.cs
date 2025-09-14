@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 
 public enum GameType
@@ -130,6 +131,12 @@ public class ArrangeNumberData
 		if (!GameData.Instance.UserDatas.TryGetValue(LastPlayerUID, out UserData user))
 			return "";
 		return user.Name;
+	}
+
+	public bool IsAllNumbersPosed()
+	{
+		// 沒有任何玩家還有剩餘數字
+		return !GameData.Instance.PlayerDatas.Values.Any(player => (player is ArrangeNumberPlayerData anPlayer && anPlayer.LeftNumbers.Count > 0));
 	}
 }
 

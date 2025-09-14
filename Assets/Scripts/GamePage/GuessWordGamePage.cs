@@ -305,8 +305,10 @@ public class GuessWordGamePage : GamePage
 		}
 	}
 
-	public void ShowGameResult()
+	public override void ShowGameResult()
 	{
+		base.ShowGameResult();
+
 		List<Tuple<ushort, ushort>> resultList = new List<Tuple<ushort, ushort>>();
 		foreach (GuessWordPlayerData player in GameData.Instance.PlayerDatas.Values)
 			resultList.Add(new Tuple<ushort, ushort>(player.UID, (ushort)player.SuccessRound));
@@ -337,6 +339,7 @@ public class GuessWordGamePage : GamePage
 
 		GameResultText.text = resultText;
 		GameResultWindow.SetActive(true);
+		PlaySound("end");
 	}
 
 	// mode = 0:輸入框 1:展示按鈕 2:鎖定按鈕
