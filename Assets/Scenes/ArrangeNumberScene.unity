@@ -4273,7 +4273,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "<i><color=#999999>\u5269\u9918\u6578\u5B57999\u500B</color></i>"
+  m_Text: "<i><color=#999999>\u6301\u6709\u6578\u5B57\uFF1A999, 999</color></i>"
 --- !u!222 &658515287
 CanvasRenderer:
   m_ObjectHideFlags: 0

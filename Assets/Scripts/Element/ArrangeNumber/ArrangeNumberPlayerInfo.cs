@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class ArrangeNumberPlayerInfo : PlayerInfo
@@ -14,7 +15,7 @@ public class ArrangeNumberPlayerInfo : PlayerInfo
 		if (playerData is not ArrangeNumberPlayerData)
 			return;
 
-		ArrangeNumberPlayerData anPlayerData = (ArrangeNumberPlayerData)playerData;
+		ArrangeNumberPlayerData anPlayerData = playerData as ArrangeNumberPlayerData;
 
 		// 更新剩餘數字
 		if (anPlayerData.LeftNumbers.Count == 0)
@@ -24,7 +25,15 @@ public class ArrangeNumberPlayerInfo : PlayerInfo
 		}
 		else
 		{
-			leftNumberText.text = $"<i><color=#999999>剩餘數字{anPlayerData.LeftNumbers.Count}個</color></i>";
+			if (GameData.Instance.IsPlayer())
+			{
+				leftNumberText.text = $"<i><color=#999999>剩餘數字{anPlayerData.LeftNumbers.Count}個</color></i>";
+			}
+			else
+			{
+				var ascendingNumbers = anPlayerData.LeftNumbers.OrderBy(x => x);
+				leftNumberText.text = $"<i><color=#999999>持有數字：{string.Join(", ", ascendingNumbers)}</color></i>";
+			}
 			stateMask.color = Color.clear;
 		}
 	}
