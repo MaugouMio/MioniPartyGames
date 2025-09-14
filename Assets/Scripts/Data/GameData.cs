@@ -61,7 +61,7 @@ public class GuessWordPlayerData : PlayerData
 
 public class ArrangeNumberPlayerData : PlayerData
 {
-	public List<int> LeftNumbers { get; set; } = new List<int>();
+	public List<ushort> LeftNumbers { get; set; } = new List<ushort>();
 	public bool IsUrgent = false;
 
 	public override void Reset()
@@ -116,9 +116,15 @@ public class ArrangeNumberData
 	public byte NumberGroupCount { get; set; } = 1;
 	public byte NumberPerPlayer { get; set; } = 1;
 
+	public ushort LastPlayerUID = 0;
+	public ushort CurrentNumber = 0;
+	public List<ushort> UrgentPlayers = new List<ushort>();
+
 	public void Reset()
 	{
-		// Do something in the future
+		LastPlayerUID = 0;
+		CurrentNumber = 0;
+		UrgentPlayers.Clear();
 	}
 }
 

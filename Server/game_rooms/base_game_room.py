@@ -171,7 +171,7 @@ class BaseGameRoom(abc.ABC):
 		await self._broadcast_start_countdown(is_stop=True)
 	
 	@abc.abstractmethod
-	async def _on_start_game_process(self):
+	async def _on_start_game_process(self) -> bool:
 		"""當遊戲開始時的遊戲機制處理。"""
 
 	async def _start_game(self):
@@ -181,7 +181,9 @@ class BaseGameRoom(abc.ABC):
 		self._reset_game()
 		self._is_playing = True
 		
-		await self._on_start_game_process()
+		if not await self._on_start_game_process():
+			self._is_playing = False
+			return
 
 		await self._broadcast_start()
 	

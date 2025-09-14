@@ -53,7 +53,7 @@ class GuessWordRoom(BaseGameRoom):
 		return Player(user)
 
 	@override
-	async def _on_start_game_process(self):
+	async def _on_start_game_process(self) -> bool:
 		self._current_round = 1
 		self._game_state = GUESS_WORD_STATE.PREPARING
 		
@@ -62,6 +62,7 @@ class GuessWordRoom(BaseGameRoom):
 		self._current_guessing_idx = 0
 		
 		await self._broadcast_player_order(include_list=True)
+		return True
 
 	@override
 	async def _on_remove_player_game_process(self, uid: int):

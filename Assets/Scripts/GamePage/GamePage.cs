@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +6,8 @@ using UnityEngine.UI;
 
 public abstract class GamePage : MonoBehaviour
 {
+	public static GamePage Instance { get; private set; }
+
 	[SerializeField]
 	private List<PlayerInfo> PlayerList;
 	[SerializeField]
@@ -49,6 +50,8 @@ public abstract class GamePage : MonoBehaviour
 	{
 		VolumeSlider.value = PlayerPrefs.GetFloat("SoundVolume", 0.5f);
 		VolumeText.text = ((int)(VolumeSlider.value * 100)).ToString();
+
+		Instance = this;
 	}
 
     // Update is called once per frame
@@ -61,6 +64,7 @@ public abstract class GamePage : MonoBehaviour
 	protected virtual void OnDestroy()
 	{
 		PlayerPrefs.SetFloat("SoundVolume", VolumeSlider.value);
+		Instance = null;
 	}
 
 	protected virtual void UpdateDataReal()
@@ -200,6 +204,8 @@ public abstract class GamePage : MonoBehaviour
 			countdownCoroutine = null;
 		}
 	}
+
+	public virtual void OnStartGame() {}
 
 	public void ShowPopupImage(string filename)
 	{

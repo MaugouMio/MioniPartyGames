@@ -25,6 +25,7 @@ class PROTOCOL_CLIENT(enum.IntEnum):
 	SET_NUMBER_GROUP_COUNT	= enum.auto()
 	SET_NUMBER_PER_PLAYER	= enum.auto()
 	POSE_NUMBER				= enum.auto()
+	SET_URGENT				= enum.auto()
 
 @enum.unique
 class PROTOCOL_SERVER(enum.IntEnum):
@@ -52,6 +53,7 @@ class PROTOCOL_SERVER(enum.IntEnum):
 	SETTINGS		= enum.auto()
 	UID				= enum.auto()
 	POSE_NUMBER		= enum.auto()
+	URGENT_PLAYER	= enum.auto()
 
 @enum.unique
 class GAME_TYPE(enum.IntEnum):

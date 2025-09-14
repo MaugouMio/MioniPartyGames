@@ -7,7 +7,16 @@ using UnityEngine.UI;
 
 public class ArrangeNumberGamePage : GamePage
 {
-	public static ArrangeNumberGamePage Instance { get; private set; }
+	public static new ArrangeNumberGamePage Instance
+	{
+		get
+		{
+			if (GamePage.Instance is not ArrangeNumberGamePage)
+				return null;
+			return GamePage.Instance as ArrangeNumberGamePage;
+		}
+		private set { }
+	}
 
 	[SerializeField]
 	private GameObject IdlePage;
@@ -42,14 +51,7 @@ public class ArrangeNumberGamePage : GamePage
 	{
 		base.Awake();
 
-		Instance = this;
 		GameResultWindow.SetActive(false);
-	}
-
-	protected override void OnDestroy()
-	{
-		base.OnDestroy();
-		Instance = null;
 	}
 
 	protected override void UpdateDataReal()

@@ -1,14 +1,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class GuessWordGamePage : GamePage
 {
-	public static GuessWordGamePage Instance { get; private set; }
+	public static new GuessWordGamePage Instance
+	{
+		get {
+			if (GamePage.Instance is not GuessWordGamePage)
+				return null;
+			return GamePage.Instance as GuessWordGamePage;
+		}
+		private set {}
+	}
 
 	[SerializeField]
 	private GameObject IdlePage;
@@ -70,12 +76,12 @@ public class GuessWordGamePage : GamePage
 	private int assignQuestionFrame = 0;
 	private ushort checkingHistoryUID = 0;
 	private IEnumerator idleCheckCoroutine = null;
+	private static GuessWordGamePage instance;
 
 	protected override void Awake()
 	{
 		base.Awake();
 
-		Instance = this;
 		GuessPageTopButtonGroup.SetActive(false);
 		IdleCheckButton.SetActive(false);
 		GameResultWindow.SetActive(false);
@@ -89,12 +95,6 @@ public class GuessWordGamePage : GamePage
 		// 出題時沒有選擇輸入框直接按 Enter 視同鎖定 (非網頁版輸入框 enter 當下會馬上觸發這邊，所以要擋同 frame)
 		if (Time.frameCount != assignQuestionFrame && GameData.Instance.GuessWordData.CurrentState == GuessWordState.PREPARING && Input.GetKeyDown(KeyCode.Return))
 			ClickAssignQuestion(2);
-	}
-
-	protected override void OnDestroy()
-	{
-		base.OnDestroy();
-		Instance = null;
 	}
 
 	protected override void UpdateDataReal()
@@ -235,8 +235,10 @@ public class GuessWordGamePage : GamePage
 		ClickCloseResult();
 	}
 
-	public void ResetTempLeaveToggle()
+	public override void OnStartGame()
 	{
+		base.OnStartGame();
+
 		TempLeaveToggle.isOn = false;
 	}
 
