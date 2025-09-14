@@ -75,7 +75,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		for player in player_list:
 			await self._send_self_numbers(player)
 		await self._broadcast_all_player_numbers_to_spectactors()
-		
+
 		return True
 
 	@override
@@ -161,7 +161,8 @@ class ArrangeNumberRoom(BaseGameRoom):
 			await self._broadcast_end()
 			return
 		
-		if len(player.numbers) == 0:  # 如果出完了所有數字，檢查是否還有其他玩家有剩
+		if not player.numbers:  # 如果出完了所有數字，檢查是否還有其他玩家有剩
+			player.is_urgent = False  # 出完數字就沒什麼好急的了
 			await self._check_left_numbers()
 	
 	async def _request_set_urgent(self, uid: int, is_urgent: bool):
@@ -172,6 +173,8 @@ class ArrangeNumberRoom(BaseGameRoom):
 		
 		player: Player = self._players[uid]
 		if player.is_urgent == is_urgent:
+			return
+		if not player.numbers:  # 沒有數字可以出了就沒有急不急的問題
 			return
 		
 		await self._boardcast_urgent_players(uid, is_urgent)
