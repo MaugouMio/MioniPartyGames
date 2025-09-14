@@ -7,6 +7,8 @@ public class ArrangeNumberPlayerInfo : PlayerInfo
 	[SerializeField]
 	private Text leftNumberText;
 	[SerializeField]
+	private GameObject UrgentImage;
+	[SerializeField]
 	private Image stateMask;
 
 	public override void UpdateData(PlayerData playerData)
@@ -21,6 +23,7 @@ public class ArrangeNumberPlayerInfo : PlayerInfo
 		if (anPlayerData.LeftNumbers.Count == 0)
 		{
 			leftNumberText.text = "<i><color=#00aa00>已出完所有數字</color></i>";
+			UrgentImage.SetActive(false);
 			stateMask.color = new Color(0f, 0f, 0f, 0.7f);
 		}
 		else
@@ -34,6 +37,7 @@ public class ArrangeNumberPlayerInfo : PlayerInfo
 				var ascendingNumbers = anPlayerData.LeftNumbers.OrderBy(x => x);
 				leftNumberText.text = $"<i><color=#999999>持有數字：{string.Join(", ", ascendingNumbers)}</color></i>";
 			}
+			UrgentImage.SetActive(anPlayerData.IsUrgent);
 			stateMask.color = Color.clear;
 		}
 	}
