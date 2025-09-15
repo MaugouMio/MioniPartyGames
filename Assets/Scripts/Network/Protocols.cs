@@ -857,11 +857,8 @@ public partial class NetManager
 		ushort number = reader.ReadUInt16();
 		if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 		{
-			if (player is ArrangeNumberPlayerData)
-			{
-				ArrangeNumberPlayerData arrangeNumberPlayer = player as ArrangeNumberPlayerData;
-				arrangeNumberPlayer.LeftNumbers.RemoveAt(arrangeNumberPlayer.LeftNumbers.Count - 1);
-			}
+			if (player is ArrangeNumberPlayerData anPlayer)
+				anPlayer.LeftNumbers.RemoveAt(anPlayer.LeftNumbers.Count - 1);
 		}
 
 		GameData.Instance.ArrangeNumberData.LastPlayerUID = uid;
@@ -881,15 +878,19 @@ public partial class NetManager
 
 		if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 		{
-			if (player is ArrangeNumberPlayerData)
-				(player as ArrangeNumberPlayerData).IsUrgent = isUrgent;
+			if (player is ArrangeNumberPlayerData anPlayer)
+				anPlayer.IsUrgent = isUrgent;
 		}
 
 		string statusText = isUrgent ? "<color=red>急了</color>" : "<color=green>不急</color>";
 		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 表示 {statusText}");
 
 		if (ArrangeNumberGamePage.Instance != null)
+		{
 			ArrangeNumberGamePage.Instance.UpdateData();
+			ArrangeNumberGamePage.Instance.ShowPopupImage(isUrgent ? "urgent" : "not_urgent");
+			ArrangeNumberGamePage.Instance.PlaySound(isUrgent ? "alert" : "quack");
+		}
 	}
 
 	// =========================================================
