@@ -156,8 +156,8 @@ public class ArrangeNumberData
 
 public class GameData
 {
-	public const uint GAME_VERSION = 3;
-	public const uint CLIENT_GAME_SUB_VERSION = 1;
+	public const uint GAME_VERSION = 4;
+	public const uint CLIENT_GAME_SUB_VERSION = 0;
 
 	public const int MAX_CHAT_RECORD = 30;
 	public const int MAX_EVENT_RECORD = 30;

@@ -181,6 +181,11 @@ public abstract class GamePage : MonoBehaviour
 		}
 	}
 
+	protected bool IsCountingDownStart()
+	{
+		return countdownCoroutine != null;
+	}
+
 	private IEnumerator Countdown(int seconds)
 	{
 		while (seconds > 0)
@@ -270,6 +275,11 @@ public abstract class GamePage : MonoBehaviour
 		SceneManager.LoadScene("RoomScene");
 	}
 
+	protected virtual bool CheckCanStartGame()
+	{
+		return true;
+	}
+
 	public void ClickStartGame()
 	{
 		if (GameData.Instance.IsCountingDownStart)
@@ -278,7 +288,7 @@ public abstract class GamePage : MonoBehaviour
 			ShowPopupMessage("須先加入遊戲才能進行操作");
 		else if (GameData.Instance.PlayerDatas.Count < 2)
 			ShowPopupMessage("至少需要兩名玩家才能開始遊戲");
-		else
+		else if (CheckCanStartGame())
 			NetManager.Instance.SendStart();
 	}
 

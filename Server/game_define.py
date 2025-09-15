@@ -2,7 +2,7 @@ import enum
 
 
 class CONST(enum.IntEnum):
-	GAME_VERSION				= 3
+	GAME_VERSION				= 4
 	START_COUNTDOWN_DURATION	= 5
 
 @enum.unique
@@ -52,6 +52,7 @@ class PROTOCOL_SERVER(enum.IntEnum):
 	ROOM_ID			= enum.auto()
 	SETTINGS		= enum.auto()
 	UID				= enum.auto()
+	PLAYER_NUMBERS	= enum.auto()
 	POSE_NUMBER		= enum.auto()
 	URGENT_PLAYER	= enum.auto()
 

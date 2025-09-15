@@ -336,6 +336,9 @@ public partial class NetManager
 		// 當前數字
 		GameData.Instance.ArrangeNumberData.LastPlayerUID = reader.ReadUInt16();
 		GameData.Instance.ArrangeNumberData.CurrentNumber = reader.ReadUInt16();
+
+		if (ArrangeNumberGamePage.Instance != null)
+			ArrangeNumberGamePage.Instance.SyncSettingTempValues();
 	}
 
 	private void OnGetUID(NetPacket packet)
@@ -417,7 +420,18 @@ public partial class NetManager
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
-		GameData.Instance.PlayerDatas[uid] = new GuessWordPlayerData { UID = uid };
+		switch (GameData.Instance.CurrentGameType)
+		{
+			case GameType.GUESS_WORD:
+				GameData.Instance.PlayerDatas[uid] = new GuessWordPlayerData { UID = uid };
+				break;
+			case GameType.ARRANGE_NUMBER:
+				GameData.Instance.PlayerDatas[uid] = new ArrangeNumberPlayerData { UID = uid };
+				break;
+			default:
+				Debug.LogError("OnPlayerJoin: 未知的遊戲類型");
+				break;
+		}
 
 		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 加入了遊戲");
 
@@ -800,7 +814,10 @@ public partial class NetManager
 		GameData.Instance.ArrangeNumberData.NumberPerPlayer = reader.ReadByte();
 
 		if (ArrangeNumberGamePage.Instance != null)
+		{
+			ArrangeNumberGamePage.Instance.SyncSettingTempValues();
 			ArrangeNumberGamePage.Instance.UpdateSettings();
+		}
 	}
 
 	private void OnGetPlayerNumbers(NetPacket packet)
@@ -1003,7 +1020,7 @@ public partial class NetManager
 		writer.WriteByte(count);
 
 		byte[] data = writer.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_MAX_NUMBER, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_NUMBER_GROUP_COUNT, data);
 		SendPacket(packet);
 	}
 	public void SendSetNumberPerPlayer(byte count)
@@ -1012,7 +1029,7 @@ public partial class NetManager
 		writer.WriteByte(count);
 
 		byte[] data = writer.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_MAX_NUMBER, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_NUMBER_PER_PLAYER, data);
 		SendPacket(packet);
 	}
 	public void SendPoseNumber()

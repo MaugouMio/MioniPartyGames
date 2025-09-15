@@ -63,6 +63,10 @@ public class ArrangeNumberGamePage : GamePage
 	private const int NUMBER_PER_PLAYER_MIN_VALUE = 1;
 	private const int NUMBER_PER_PLAYER_MAX_VALUE = 20;
 
+	private int tempMaxNumber;
+	private int tempNumberGroupCount;
+	private int tempNumberPerPlayer;
+
 	protected override void Awake()
 	{
 		base.Awake();
@@ -70,6 +74,8 @@ public class ArrangeNumberGamePage : GamePage
 		GameResultWindow.SetActive(false);
 		ExplosionGIF.gameObject.SetActive(false);
 		ExplosionGIF.onPlayEnd = () => OpenResultWindow(false);
+
+		SyncSettingTempValues();
 	}
 
 	protected override void UpdateDataReal()
@@ -113,16 +119,23 @@ public class ArrangeNumberGamePage : GamePage
 		SelfNumberList.UpdateData(null);
 	}
 
+	public void SyncSettingTempValues()
+	{
+		tempMaxNumber = GameData.Instance.ArrangeNumberData.MaxNumber;
+		tempNumberGroupCount = GameData.Instance.ArrangeNumberData.NumberGroupCount;
+		tempNumberPerPlayer = GameData.Instance.ArrangeNumberData.NumberPerPlayer;
+	}
+
 	public void UpdateSettings()
 	{
-		MaxNumberSettingText.text = GameData.Instance.ArrangeNumberData.MaxNumber.ToString();
+		MaxNumberSettingText.text = tempMaxNumber.ToString();
 
-		if (GameData.Instance.ArrangeNumberData.NumberGroupCount > 0)
-			NumberGroupCountSettingText.text = GameData.Instance.ArrangeNumberData.NumberGroupCount.ToString();
+		if (tempNumberGroupCount > 0)
+			NumberGroupCountSettingText.text = tempNumberGroupCount.ToString();
 		else
 			NumberGroupCountSettingText.text = "∞";
 
-		NumberPerPlayerSettingText.text = GameData.Instance.ArrangeNumberData.NumberPerPlayer.ToString();
+		NumberPerPlayerSettingText.text = tempNumberPerPlayer.ToString();
 	}
 
 	private void UpdatePlayingInfo()
@@ -155,6 +168,10 @@ public class ArrangeNumberGamePage : GamePage
 	public override void StartCountdown(int seconds)
 	{
 		base.StartCountdown(seconds);
+
+		// 開始倒數時同步假數值，這時候已經不能設定了
+		SyncSettingTempValues();
+		UpdateSettings();
 
 		// 開始倒數就自動關閉上一場的結果顯示
 		ClickCloseResult();
@@ -190,21 +207,42 @@ public class ArrangeNumberGamePage : GamePage
 		return 0;
 	}
 
+	private bool ClickSettingCheck()
+	{
+		if (!GameData.Instance.IsPlayer())
+		{
+			ShowPopupMessage("請先成為玩家再更改設定");
+			return false;
+		}
+		if (IsCountingDownStart())
+		{
+			ShowPopupMessage("遊戲開始倒數中，無法更改設定");
+			return false;
+		}
+		return true;
+	}
+
 	public void PressSetMaxNumber(bool isAdd)
 	{
-		int modify = isAdd ? MAX_NUMBER_STEP : -MAX_NUMBER_STEP;
-		ushort newMaxNumber = (ushort)Mathf.Clamp(GameData.Instance.ArrangeNumberData.MaxNumber + modify, MAX_NUMBER_MIN_VALUE, MAX_NUMBER_MAX_VALUE);
-		if (newMaxNumber == GameData.Instance.ArrangeNumberData.MaxNumber)
+		if (!ClickSettingCheck())
 			return;
-		
+
+		int modify = isAdd ? MAX_NUMBER_STEP : -MAX_NUMBER_STEP;
+		ushort newMaxNumber = (ushort)Mathf.Clamp(tempMaxNumber + modify, MAX_NUMBER_MIN_VALUE, MAX_NUMBER_MAX_VALUE);
+		if (newMaxNumber == tempMaxNumber)
+			return;
+
 		// 設定假數值然後直接更新顯示，結束長按會觸發點擊事件送出真正的設定
-		GameData.Instance.ArrangeNumberData.MaxNumber = newMaxNumber;
+		tempMaxNumber = newMaxNumber;
 		UpdateMiddlePage();
 	}
 	public void ClickSetMaxNumber(bool isAdd)
 	{
+		if (!ClickSettingCheck())
+			return;
+
 		int modify = isAdd ? MAX_NUMBER_STEP : -MAX_NUMBER_STEP;
-		ushort newMaxNumber = (ushort)Mathf.Clamp(GameData.Instance.ArrangeNumberData.MaxNumber + modify, MAX_NUMBER_MIN_VALUE, MAX_NUMBER_MAX_VALUE);
+		ushort newMaxNumber = (ushort)Mathf.Clamp(tempMaxNumber + modify, MAX_NUMBER_MIN_VALUE, MAX_NUMBER_MAX_VALUE);
 		if (newMaxNumber == GameData.Instance.ArrangeNumberData.MaxNumber)
 			return;
 
@@ -213,19 +251,25 @@ public class ArrangeNumberGamePage : GamePage
 
 	public void PressSetNumberGroupCount(bool isAdd)
 	{
+		if (!ClickSettingCheck())
+			return;
+
 		int modify = isAdd ? NUMBER_GROUP_COUNT_STEP : -NUMBER_GROUP_COUNT_STEP;
-		byte newCount = (byte)Mathf.Clamp(GameData.Instance.ArrangeNumberData.NumberGroupCount + modify, NUMBER_GROUP_COUNT_MIN_VALUE, NUMBER_GROUP_COUNT_MAX_VALUE);
-		if (newCount == GameData.Instance.ArrangeNumberData.NumberGroupCount)
+		byte newCount = (byte)Mathf.Clamp(tempNumberGroupCount + modify, NUMBER_GROUP_COUNT_MIN_VALUE, NUMBER_GROUP_COUNT_MAX_VALUE);
+		if (newCount == tempNumberGroupCount)
 			return;
 
 		// 設定假數值然後直接更新顯示，結束長按會觸發點擊事件送出真正的設定
-		GameData.Instance.ArrangeNumberData.NumberGroupCount = newCount;
+		tempNumberGroupCount = newCount;
 		UpdateMiddlePage();
 	}
 	public void ClickSetNumberGroupCount(bool isAdd)
 	{
+		if (!ClickSettingCheck())
+			return;
+
 		int modify = isAdd ? NUMBER_GROUP_COUNT_STEP : -NUMBER_GROUP_COUNT_STEP;
-		byte newCount = (byte)Mathf.Clamp(GameData.Instance.ArrangeNumberData.NumberGroupCount + modify, NUMBER_GROUP_COUNT_MIN_VALUE, NUMBER_GROUP_COUNT_MAX_VALUE);
+		byte newCount = (byte)Mathf.Clamp(tempNumberGroupCount + modify, NUMBER_GROUP_COUNT_MIN_VALUE, NUMBER_GROUP_COUNT_MAX_VALUE);
 		if (newCount == GameData.Instance.ArrangeNumberData.NumberGroupCount)
 			return;
 
@@ -234,23 +278,41 @@ public class ArrangeNumberGamePage : GamePage
 
 	public void PressSetNumberPerPlayer(bool isAdd)
 	{
+		if (!ClickSettingCheck())
+			return;
+
 		int modify = isAdd ? NUMBER_PER_PLAYER_STEP : -NUMBER_PER_PLAYER_STEP;
-		byte newCount = (byte)Mathf.Clamp(GameData.Instance.ArrangeNumberData.NumberPerPlayer + modify, NUMBER_PER_PLAYER_MIN_VALUE, NUMBER_PER_PLAYER_MAX_VALUE);
-		if (newCount == GameData.Instance.ArrangeNumberData.NumberPerPlayer)
+		byte newCount = (byte)Mathf.Clamp(tempNumberPerPlayer + modify, NUMBER_PER_PLAYER_MIN_VALUE, NUMBER_PER_PLAYER_MAX_VALUE);
+		if (newCount == tempNumberPerPlayer)
 			return;
 
 		// 設定假數值然後直接更新顯示，結束長按會觸發點擊事件送出真正的設定
-		GameData.Instance.ArrangeNumberData.NumberPerPlayer = newCount;
+		tempNumberPerPlayer = newCount;
 		UpdateMiddlePage();
 	}
 	public void ClickSetNumberPerPlayer(bool isAdd)
 	{
+		if (!ClickSettingCheck())
+			return;
+
 		int modify = isAdd ? NUMBER_PER_PLAYER_STEP : -NUMBER_PER_PLAYER_STEP;
-		byte newCount = (byte)Mathf.Clamp(GameData.Instance.ArrangeNumberData.NumberPerPlayer + modify, NUMBER_PER_PLAYER_MIN_VALUE, NUMBER_PER_PLAYER_MAX_VALUE);
+		byte newCount = (byte)Mathf.Clamp(tempNumberPerPlayer + modify, NUMBER_PER_PLAYER_MIN_VALUE, NUMBER_PER_PLAYER_MAX_VALUE);
 		if (newCount == GameData.Instance.ArrangeNumberData.NumberPerPlayer)
 			return;
 
 		NetManager.Instance.SendSetNumberPerPlayer(newCount);
+	}
+
+	protected override bool CheckCanStartGame()
+	{
+		int totalNumberCount = GameData.Instance.ArrangeNumberData.MaxNumber * GameData.Instance.ArrangeNumberData.NumberGroupCount;
+		int needNumberCount = GameData.Instance.PlayerDatas.Count * GameData.Instance.ArrangeNumberData.NumberPerPlayer;
+		if (needNumberCount > totalNumberCount)
+		{
+			ShowPopupMessage("可分配的數字數量不足，請調整設定");
+			return false;
+		}
+		return true;
 	}
 
 	public void ClickSetUrgent(bool isUrgent)

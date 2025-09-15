@@ -105,6 +105,8 @@ class ArrangeNumberRoom(BaseGameRoom):
 	async def _request_set_max_number(self, uid: int, max_number: int):
 		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
 			return
+		if self._countdown_timer:  # 倒數中不允許更改設定
+			return
 		if max_number < 10 or max_number > 1000 or max_number == self._max_number:
 			return
 		if uid not in self._players:
@@ -118,6 +120,8 @@ class ArrangeNumberRoom(BaseGameRoom):
 	async def _request_set_number_group_count(self, uid: int, group_count: int):
 		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
 			return
+		if self._countdown_timer:  # 倒數中不允許更改設定
+			return
 		if group_count < 0 or group_count > 50 or group_count == self._number_group_count:
 			return
 		if uid not in self._players:
@@ -130,6 +134,8 @@ class ArrangeNumberRoom(BaseGameRoom):
 
 	async def _request_set_number_per_player(self, uid: int, number_per_player: int):
 		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
+			return
+		if self._countdown_timer:  # 倒數中不允許更改設定
 			return
 		if number_per_player < 1 or number_per_player > 20 or number_per_player == self._number_per_player:
 			return

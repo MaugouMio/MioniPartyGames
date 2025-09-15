@@ -113,12 +113,14 @@ public class GuessWordGamePage : GamePage
 			foreach (var player in GameData.Instance.PlayerDatas.Values)
 				yield return player;
 		}
-
-		foreach (var uid in GameData.Instance.GuessWordData.PlayerOrder)
+		else
 		{
-			if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
-				continue;
-			yield return player;
+			foreach (var uid in GameData.Instance.GuessWordData.PlayerOrder)
+			{
+				if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+					continue;
+				yield return player;
+			}
 		}
 	}
 
