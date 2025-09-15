@@ -505,7 +505,7 @@ public partial class NetManager
 
 		if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING)
 		{
-			ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
+			ushort guessingPlayerUID = GameData.Instance.GuessWordData.GetCurrentPlayerUID();
 			if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
 				GameData.Instance.AddEventRecord($"輪到 <color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 進行猜題");
 			else
@@ -516,7 +516,7 @@ public partial class NetManager
 		if (GuessWordGamePage.Instance != null)
 		{
 			GuessWordGamePage.Instance.UpdateData();
-			if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING && GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID)
+			if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING && GameData.Instance.GuessWordData.GetCurrentPlayerUID() == GameData.Instance.SelfUID)
 				GuessWordGamePage.Instance.StartIdleCheck();
 			if (originState == GuessWordState.PREPARING && GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING)
 				GuessWordGamePage.Instance.PlaySound("ding");
@@ -545,7 +545,7 @@ public partial class NetManager
 			// 猜題玩家更換時強制改顯示該玩家的歷史紀錄
 			if (GameData.Instance.GuessWordData.GuessingPlayerIndex < GameData.Instance.GuessWordData.PlayerOrder.Count)
 			{
-				ushort currentPlayerUID = GameData.Instance.GetCurrentPlayerUID();
+				ushort currentPlayerUID = GameData.Instance.GuessWordData.GetCurrentPlayerUID();
 				GuessWordGamePage.Instance.ShowPlayerHistoryRecord(currentPlayerUID);
 			}
 		}
@@ -650,7 +650,7 @@ public partial class NetManager
 		GameData.Instance.GuessWordData.Votes.Clear();
 		GameData.Instance.GuessWordData.CurrentState = GuessWordState.VOTING;
 
-		ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
+		ushort guessingPlayerUID = GameData.Instance.GuessWordData.GetCurrentPlayerUID();
 		if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
 			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 提問他的名詞是否為 <color=blue>{GameData.Instance.GuessWordData.VotingGuess}</color>");
 

@@ -35,7 +35,7 @@ public class GuessWordPlayerInfo : PlayerInfo
 		}
 		else
 		{
-			bool isProcessingPlayer = gwPlayerData.UID == GameData.Instance.GetCurrentPlayerUID();
+			bool isProcessingPlayer = gwPlayerData.UID == GameData.Instance.GuessWordData.GetCurrentPlayerUID();
 			if (gwPlayerData.SuccessRound != 0)
 				stateMask.color = new Color(0f, 0f, 0f, 0.7f);
 			else if (isProcessingPlayer &&

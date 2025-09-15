@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 public enum GameType
 {
@@ -108,6 +108,20 @@ public class GuessWordGameData
 			return 0;
 		return PlayerOrder[GuessingPlayerIndex];
 	}
+
+	public bool IsOthersAllGuessed()
+	{
+		foreach (var player in GameData.Instance.PlayerDatas.Values)
+		{
+			if (player is not GuessWordPlayerData)
+				continue;
+
+			GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
+			if (gwPlayer.UID != GameData.Instance.SelfUID && gwPlayer.SuccessRound == 0)
+				return false;
+		}
+		return true;
+	}
 }
 
 public class ArrangeNumberData
@@ -196,11 +210,6 @@ public class GameData
 			player.Reset();
 	}
 
-	public ushort GetCurrentPlayerUID()
-	{
-		return GuessWordData.GetCurrentPlayerUID();
-	}
-
 	public void AddChatRecord(string message, bool isHidden)
 	{
 		if (ChatRecord.Count >= MAX_CHAT_RECORD)
@@ -211,8 +220,8 @@ public class GameData
 		else
 			ChatRecord.Enqueue(message);
 
-		if (GuessWordGamePage.Instance != null)
-			GuessWordGamePage.Instance.UpdateChatList(true);
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateChatList(true);
 	}
 
 	public void AddEventRecord(string eventText)
@@ -223,8 +232,8 @@ public class GameData
 		string timeText = DateTime.Now.ToString("HH:mm:ss");
 		EventRecord.Enqueue($"[{timeText}] {eventText}");
 
-		if (GuessWordGamePage.Instance != null)
-			GuessWordGamePage.Instance.UpdateEventList(true);
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateEventList(true);
 	}
 
 	public void AddUserName(string name)
@@ -244,9 +253,9 @@ public class GameData
 		}
 	}
 
-	public bool IsPlayer()
+	public bool IsPlayer(ushort uid = 0)
 	{
-		return PlayerDatas.ContainsKey(SelfUID);
+		return PlayerDatas.ContainsKey(uid == 0 ? SelfUID : uid);
 	}
 
 	public bool IsCanJoinGameState()
@@ -269,19 +278,5 @@ public class GameData
 		if (userNameCount.ContainsKey(name))
 			return userNameCount[name] > 1;
 		return false;
-	}
-
-	public bool IsOthersAllGuessed()
-	{
-		foreach (var player in PlayerDatas.Values)
-		{
-			if (player is not GuessWordPlayerData)
-				continue;
-
-			GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
-			if (gwPlayer.UID != SelfUID && gwPlayer.SuccessRound == 0)
-				return false;
-		}
-		return true;
 	}
 }
