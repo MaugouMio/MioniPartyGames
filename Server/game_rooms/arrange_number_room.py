@@ -88,15 +88,15 @@ class ArrangeNumberRoom(BaseGameRoom):
 
 		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
 			if len(self._players) < 2:
-				await self._on_game_end_process()
+				await self._on_game_end_process(is_force=True)
 				return
 			
 			await self._check_left_numbers()
 
-	async def _on_game_end_process(self):
+	async def _on_game_end_process(self, is_force: bool = False):
 		await self._broadcast_all_player_numbers()
 		self._reset_game()
-		await self._broadcast_end()
+		await self._broadcast_end(is_force)
 
 	async def _check_left_numbers(self):
 		"""檢查是否還有剩餘的數字可以出牌。"""
