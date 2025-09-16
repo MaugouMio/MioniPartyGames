@@ -19,10 +19,7 @@ public class TextList : MonoBehaviour
 
 		if (listItemTemplate == null)
 			Debug.LogError($"TextList item template is empty for object {gameObject.name}");
-	}
 
-	void Start()
-	{
 		listItemTemplate.gameObject.SetActive(false); // 初始時隱藏預設的 Text 元件
 		textList.Add(listItemTemplate);
 	}
