@@ -88,11 +88,15 @@ class ArrangeNumberRoom(BaseGameRoom):
 
 		if self._game_state != ARRANGE_NUMBER_STATE.WAITING:
 			if len(self._players) < 2:
-				self._reset_game()
-				await self._broadcast_end(is_force=True)
+				await self._on_game_end_process()
 				return
 			
 			await self._check_left_numbers()
+
+	async def _on_game_end_process(self):
+		await self._broadcast_all_player_numbers()
+		self._reset_game()
+		await self._broadcast_end()
 
 	async def _check_left_numbers(self):
 		"""檢查是否還有剩餘的數字可以出牌。"""
@@ -100,8 +104,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		if any(len(player.numbers) > 0 for player in player_list):
 			return
 		
-		self._reset_game()
-		await self._broadcast_end()
+		await self._on_game_end_process()
 	
 	# user requests ===========================================================================
 
@@ -167,9 +170,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		# 檢查是不是最小數字的玩家
 		player_list: list[Player] = cast(list[Player], self._players.values())
 		if any(p.numbers[-1] < self._current_number for p in player_list if p.numbers):  # 有人數字更小，爆了
-			await self._broadcast_all_player_numbers()
-			self._reset_game()
-			await self._broadcast_end()
+			await self._on_game_end_process()
 			return
 		
 		if not player.numbers:  # 如果出完了所有數字，檢查是否還有其他玩家有剩
@@ -187,7 +188,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 			return
 		if not player.numbers:  # 沒有數字可以出了就沒有急不急的問題
 			return
-		
+
 		await self._boardcast_urgent_players(uid, is_urgent)
 
 	@override
