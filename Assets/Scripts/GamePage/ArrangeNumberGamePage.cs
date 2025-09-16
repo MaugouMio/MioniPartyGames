@@ -63,9 +63,9 @@ public class ArrangeNumberGamePage : GamePage
 	private const int NUMBER_PER_PLAYER_MIN_VALUE = 1;
 	private const int NUMBER_PER_PLAYER_MAX_VALUE = 20;
 
-	private int tempMaxNumber;
-	private int tempNumberGroupCount;
-	private int tempNumberPerPlayer;
+	private ushort tempMaxNumber;
+	private byte tempNumberGroupCount;
+	private byte tempNumberPerPlayer;
 
 	protected override void Awake()
 	{
@@ -207,16 +207,18 @@ public class ArrangeNumberGamePage : GamePage
 		return 0;
 	}
 
-	private bool ClickSettingCheck()
+	private bool ClickSettingCheck(bool showHint = true)
 	{
 		if (!GameData.Instance.IsPlayer())
 		{
-			ShowPopupMessage("請先成為玩家再更改設定");
+			if (showHint)
+				ShowPopupMessage("請先成為玩家再更改設定");
 			return false;
 		}
 		if (IsCountingDownStart())
 		{
-			ShowPopupMessage("遊戲開始倒數中，無法更改設定");
+			if (showHint)
+				ShowPopupMessage("遊戲開始倒數中，無法更改設定");
 			return false;
 		}
 		return true;
@@ -238,15 +240,12 @@ public class ArrangeNumberGamePage : GamePage
 	}
 	public void ClickSetMaxNumber(bool isAdd)
 	{
-		if (!ClickSettingCheck())
+		if (!ClickSettingCheck(false))
+			return;
+		if (tempMaxNumber == GameData.Instance.ArrangeNumberData.MaxNumber)
 			return;
 
-		int modify = isAdd ? MAX_NUMBER_STEP : -MAX_NUMBER_STEP;
-		ushort newMaxNumber = (ushort)Mathf.Clamp(tempMaxNumber + modify, MAX_NUMBER_MIN_VALUE, MAX_NUMBER_MAX_VALUE);
-		if (newMaxNumber == GameData.Instance.ArrangeNumberData.MaxNumber)
-			return;
-
-		NetManager.Instance.SendSetMaxNumber(newMaxNumber);
+		NetManager.Instance.SendSetMaxNumber(tempMaxNumber);
 	}
 
 	public void PressSetNumberGroupCount(bool isAdd)
@@ -265,15 +264,12 @@ public class ArrangeNumberGamePage : GamePage
 	}
 	public void ClickSetNumberGroupCount(bool isAdd)
 	{
-		if (!ClickSettingCheck())
+		if (!ClickSettingCheck(false))
+			return;
+		if (tempNumberGroupCount == GameData.Instance.ArrangeNumberData.NumberGroupCount)
 			return;
 
-		int modify = isAdd ? NUMBER_GROUP_COUNT_STEP : -NUMBER_GROUP_COUNT_STEP;
-		byte newCount = (byte)Mathf.Clamp(tempNumberGroupCount + modify, NUMBER_GROUP_COUNT_MIN_VALUE, NUMBER_GROUP_COUNT_MAX_VALUE);
-		if (newCount == GameData.Instance.ArrangeNumberData.NumberGroupCount)
-			return;
-
-		NetManager.Instance.SendSetNumberGroupCount(newCount);
+		NetManager.Instance.SendSetNumberGroupCount(tempNumberGroupCount);
 	}
 
 	public void PressSetNumberPerPlayer(bool isAdd)
@@ -292,15 +288,12 @@ public class ArrangeNumberGamePage : GamePage
 	}
 	public void ClickSetNumberPerPlayer(bool isAdd)
 	{
-		if (!ClickSettingCheck())
+		if (!ClickSettingCheck(false))
+			return;
+		if (tempNumberPerPlayer == GameData.Instance.ArrangeNumberData.NumberPerPlayer)
 			return;
 
-		int modify = isAdd ? NUMBER_PER_PLAYER_STEP : -NUMBER_PER_PLAYER_STEP;
-		byte newCount = (byte)Mathf.Clamp(tempNumberPerPlayer + modify, NUMBER_PER_PLAYER_MIN_VALUE, NUMBER_PER_PLAYER_MAX_VALUE);
-		if (newCount == GameData.Instance.ArrangeNumberData.NumberPerPlayer)
-			return;
-
-		NetManager.Instance.SendSetNumberPerPlayer(newCount);
+		NetManager.Instance.SendSetNumberPerPlayer(tempNumberPerPlayer);
 	}
 
 	protected override bool CheckCanStartGame()
