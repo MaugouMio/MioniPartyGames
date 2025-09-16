@@ -789,8 +789,8 @@ public partial class NetManager
 		{
 			string fullMessage = $"[<color=yellow>{user.Name}</color>] {message}";
 			GameData.Instance.AddChatRecord(fullMessage, isHidden == 1);
-			if (GuessWordGamePage.Instance != null)
-				GuessWordGamePage.Instance.ShowPopupMessage(fullMessage);
+			if (GamePage.Instance != null)
+				GamePage.Instance.ShowPopupMessage(fullMessage);
 		}
 	}
 
