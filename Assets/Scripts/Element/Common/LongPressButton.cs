@@ -23,6 +23,8 @@ public class LongPressButton : MonoBehaviour, IPointerDownHandler, IPointerUpHan
 		pointDownTime = Time.time;
 		lastTriggerTime = pointDownTime + longPressDuration - longPressTriggerInterval;
 		isPressing = true;
+
+		onLongPressTrigger?.Invoke();
 	}
 
 	public void OnPointerUp(PointerEventData eventData)
