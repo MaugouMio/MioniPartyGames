@@ -54,6 +54,9 @@ class GuessWordRoom(BaseGameRoom):
 
 	@override
 	async def _on_start_game_process(self) -> bool:
+		if not await super()._on_start_game_process():
+			return False
+		
 		self._current_round = 1
 		self._game_state = GUESS_WORD_STATE.PREPARING
 		

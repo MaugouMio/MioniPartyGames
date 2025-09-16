@@ -205,7 +205,8 @@ public class GameData
 
 	public void ResetGame()
 	{
-		IsCountingDownStart = false;
+		GuessWordData.Reset();
+		ArrangeNumberData.Reset();
 		foreach (var player in PlayerDatas.Values)
 			player.Reset();
 	}

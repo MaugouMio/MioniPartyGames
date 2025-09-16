@@ -173,18 +173,18 @@ class BaseGameRoom(abc.ABC):
 	@abc.abstractmethod
 	async def _on_start_game_process(self) -> bool:
 		"""當遊戲開始時的遊戲機制處理。"""
+		await self._boradcast_reset_game_data()
+		return True
 
 	async def _start_game(self):
 		"""開始遊戲。"""
 		self._countdown_timer = None
 		
 		self._reset_game()
-		self._is_playing = True
-		
 		if not await self._on_start_game_process():
-			self._is_playing = False
 			return
 
+		self._is_playing = True
 		await self._broadcast_start()
 	
 	@abc.abstractmethod
@@ -271,6 +271,11 @@ class BaseGameRoom(abc.ABC):
 			data += CONST.START_COUNTDOWN_DURATION.to_bytes(1, byteorder="little")
 		
 		packet = network.new_packet(PROTOCOL_SERVER.START_COUNTDOWN, data)
+		await self._broadcast(packet)
+
+	async def _boradcast_reset_game_data(self):
+		"""廣播重置遊戲資料。"""
+		packet = network.new_packet(PROTOCOL_SERVER.RESET_GAME_DATA, bytes())
 		await self._broadcast(packet)
 	
 	async def _broadcast_start(self):

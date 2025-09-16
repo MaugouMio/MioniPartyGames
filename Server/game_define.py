@@ -55,6 +55,7 @@ class PROTOCOL_SERVER(enum.IntEnum):
 	PLAYER_NUMBERS	= enum.auto()
 	POSE_NUMBER		= enum.auto()
 	URGENT_PLAYER	= enum.auto()
+	RESET_GAME_DATA	= enum.auto()
 
 @enum.unique
 class GAME_TYPE(enum.IntEnum):

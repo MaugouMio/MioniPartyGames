@@ -48,6 +48,9 @@ class ArrangeNumberRoom(BaseGameRoom):
 
 	@override
 	async def _on_start_game_process(self) -> bool:
+		if not await super()._on_start_game_process():
+			return False
+
 		# 給每個玩家分配數字並通知
 		player_list: list[Player] = cast(list[Player], self._players.values())
 		if self._number_group_count == 0:  # 代表無限組，每個人各自隨機生成就好
@@ -159,7 +162,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 		
 		self._last_player_uid = uid
 		self._current_number = player.numbers.pop()
-		self._broadcast_pose_number()
+		await self._broadcast_pose_number()
 
 		# 檢查是不是最小數字的玩家
 		player_list: list[Player] = cast(list[Player], self._players.values())
@@ -246,9 +249,12 @@ class ArrangeNumberRoom(BaseGameRoom):
 			data += number.to_bytes(2, byteorder="little")
 		
 		packet = network.new_packet(PROTOCOL_SERVER.PLAYER_NUMBERS, data)
-		await self._broadcast(packet, self._players.keys())
+		try:
+			await player.user.socket.send(packet)
+		except:
+			pass
 
-	async def _broadcast_all_player_numbers(self, exclude_clients: Collection[int]):
+	async def _broadcast_all_player_numbers(self, exclude_clients: Collection[int] = {}):
 		player_list: list[Player] = cast(list[Player], self._players.values())
 
 		data = bytes()

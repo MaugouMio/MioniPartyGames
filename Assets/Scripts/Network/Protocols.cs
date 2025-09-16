@@ -54,6 +54,7 @@ public enum PROTOCOL_SERVER
 	PLAYER_NUMBERS,
 	POSE_NUMBER,
 	URGENT_PLAYER,
+	RESET_GAME_DATA,
 }
 
 public class NetPacket
@@ -205,6 +206,9 @@ public partial class NetManager
 				break;
 			case PROTOCOL_SERVER.START:
 				OnGameStart(packet);
+				break;
+			case PROTOCOL_SERVER.RESET_GAME_DATA:
+				OnResetGameData(packet);
 				break;
 			case PROTOCOL_SERVER.GAMESTATE:
 				OnGameStateChanged(packet);
@@ -482,9 +486,15 @@ public partial class NetManager
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdateStartButton();
 	}
-	private void OnGameStart(NetPacket packet)
+	private void OnResetGameData(NetPacket packet)
 	{
 		GameData.Instance.ResetGame();
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateData();
+	}
+	private void OnGameStart(NetPacket packet)
+	{
+		GameData.Instance.IsCountingDownStart = false;
 		switch (GameData.Instance.CurrentGameType)
 		{
 			case GameType.GUESS_WORD:
@@ -865,6 +875,9 @@ public partial class NetManager
 				(p as ArrangeNumberPlayerData).LeftNumbers = Enumerable.Repeat<ushort>(0, numberCount).ToList();
 			}
 		}
+
+		if (ArrangeNumberGamePage.Instance != null)
+			ArrangeNumberGamePage.Instance.UpdateData();
 	}
 
 	private void OnPoseNumber(NetPacket packet)

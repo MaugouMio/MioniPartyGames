@@ -81,6 +81,7 @@ class GameManager(IUserManager):
 		
 		如果需要關閉連線則返回 True
 		"""
+		print(f"Received protocol {protocol} from user {user.uid}, size: {len(message)} bytes")
 		match protocol:
 			case PROTOCOL_CLIENT.VERSION:
 				if user.version_checked:
