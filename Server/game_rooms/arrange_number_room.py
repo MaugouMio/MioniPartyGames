@@ -188,7 +188,9 @@ class ArrangeNumberRoom(BaseGameRoom):
 			return
 		if not player.numbers:  # 沒有數字可以出了就沒有急不急的問題
 			return
-
+		
+		player.is_urgent = is_urgent
+		
 		await self._boardcast_urgent_players(uid, is_urgent)
 
 	@override
