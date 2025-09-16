@@ -910,20 +910,30 @@ public partial class NetManager
 		ushort uid = reader.ReadUInt16();
 		bool isUrgent = reader.ReadByte() == 1;
 
+		bool isAutoReset = false;
 		if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 		{
 			if (player is ArrangeNumberPlayerData anPlayer)
+			{
 				anPlayer.IsUrgent = isUrgent;
+				isAutoReset = anPlayer.LeftNumbers.Count == 0;
+			}
 		}
 
-		string statusText = isUrgent ? "<color=red>急了</color>" : "<color=green>不急</color>";
-		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 表示 {statusText}");
+		if (!isAutoReset)
+		{
+			string statusText = isUrgent ? "<color=red>急了</color>" : "<color=green>不急</color>";
+			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 表示 {statusText}");
+		}
 
 		if (ArrangeNumberGamePage.Instance != null)
 		{
 			ArrangeNumberGamePage.Instance.UpdateData();
-			ArrangeNumberGamePage.Instance.ShowPopupImage(isUrgent ? "urgent" : "not_urgent");
-			ArrangeNumberGamePage.Instance.PlaySound(isUrgent ? "alert" : "quack");
+			if (!isAutoReset)
+			{
+				ArrangeNumberGamePage.Instance.ShowPopupImage(isUrgent ? "urgent" : "not_urgent");
+				ArrangeNumberGamePage.Instance.PlaySound(isUrgent ? "alert" : "quack");
+			}
 		}
 	}
 

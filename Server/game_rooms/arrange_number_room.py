@@ -174,7 +174,9 @@ class ArrangeNumberRoom(BaseGameRoom):
 			return
 		
 		if not player.numbers:  # 如果出完了所有數字，檢查是否還有其他玩家有剩
-			player.is_urgent = False  # 出完數字就沒什麼好急的了
+			if player.is_urgent:  # 出完數字就沒什麼好急的了
+				player.is_urgent = False
+				await self._boardcast_urgent_players(uid, False)
 			await self._check_left_numbers()
 	
 	async def _request_set_urgent(self, uid: int, is_urgent: bool):

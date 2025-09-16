@@ -156,7 +156,7 @@ public class ArrangeNumberGamePage : GamePage
 		{
 			if (selfPlayer is ArrangeNumberPlayerData selfANPlayer)
 			{
-				buttonList.SetActive(true);
+				buttonList.SetActive(selfANPlayer.LeftNumbers.Count > 0);
 				UrgentButton.SetActive(!selfANPlayer.IsUrgent);
 				NotUrgentButton.SetActive(selfANPlayer.IsUrgent);
 				return;
