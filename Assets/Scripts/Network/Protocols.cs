@@ -827,6 +827,7 @@ public partial class NetManager
 		{
 			ArrangeNumberGamePage.Instance.SyncSettingTempValues();
 			ArrangeNumberGamePage.Instance.UpdateSettings();
+			ArrangeNumberGamePage.Instance.PlaySound("pop_off");
 		}
 	}
 
@@ -897,7 +898,10 @@ public partial class NetManager
 		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 出了數字 <color=blue>{number}</color>");
 
 		if (ArrangeNumberGamePage.Instance != null)
+		{
 			ArrangeNumberGamePage.Instance.UpdateData();
+			ArrangeNumberGamePage.Instance.PlaySound("ora");
+		}
 	}
 
 	private void OnUrgentPlayer(NetPacket packet)
