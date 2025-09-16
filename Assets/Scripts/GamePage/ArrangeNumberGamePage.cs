@@ -298,12 +298,16 @@ public class ArrangeNumberGamePage : GamePage
 
 	protected override bool CheckCanStartGame()
 	{
-		int totalNumberCount = GameData.Instance.ArrangeNumberData.MaxNumber * GameData.Instance.ArrangeNumberData.NumberGroupCount;
-		int needNumberCount = GameData.Instance.PlayerDatas.Count * GameData.Instance.ArrangeNumberData.NumberPerPlayer;
-		if (needNumberCount > totalNumberCount)
+		// 數字組數為無限時不檢查
+		if (GameData.Instance.ArrangeNumberData.NumberGroupCount != 0)
 		{
-			ShowPopupMessage("可分配的數字數量不足，請調整設定");
-			return false;
+			int totalNumberCount = GameData.Instance.ArrangeNumberData.MaxNumber * GameData.Instance.ArrangeNumberData.NumberGroupCount;
+			int needNumberCount = GameData.Instance.PlayerDatas.Count * GameData.Instance.ArrangeNumberData.NumberPerPlayer;
+			if (needNumberCount > totalNumberCount)
+			{
+				ShowPopupMessage("可分配的數字數量不足，請調整設定");
+				return false;
+			}
 		}
 		return true;
 	}
