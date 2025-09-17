@@ -6,7 +6,7 @@ from game_define import PROTOCOL_CLIENT, PROTOCOL_SERVER, GAME_TYPE, CONST
 from game_rooms.base_game_room import BaseGameRoom
 from game_rooms.guess_word_room import GuessWordRoom
 from game_rooms.arrange_number_room import ArrangeNumberRoom
-from managers.user_manger_inteface import IUserManager
+from managers.user_manager_interface import IUserManager
 import network
 from user import User
 

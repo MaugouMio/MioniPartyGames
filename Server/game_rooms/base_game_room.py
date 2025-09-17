@@ -3,7 +3,7 @@ import abc
 from collections.abc import Collection
 
 from game_define import PROTOCOL_CLIENT, PROTOCOL_SERVER, CONST
-from managers.user_manger_inteface import IUserManager
+from managers.user_manager_interface import IUserManager
 import id_generator
 import network
 from user import User, BasePlayer
