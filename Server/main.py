@@ -1,4 +1,3 @@
-import sys
 import os
 import websockets
 import ssl
@@ -31,7 +30,7 @@ async def main():
 	print(f"伺服器在 {HOST}:{PORT} 上監聽...")
 	
 	manager = GameManager()
-	if sys.version_info.minor >= 13:
+	if int(websockets.__version__.split(".")[0]) >= 13:
 		server = websockets.serve(manager.handle_client_new, HOST, PORT, ssl=ssl_context)
 	else:
 		server = websockets.serve(manager.handle_client, HOST, PORT, ssl=ssl_context)
