@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 public enum PROTOCOL_CLIENT
@@ -18,6 +19,11 @@ public enum PROTOCOL_CLIENT
 	CREATE_ROOM,
 	JOIN_ROOM,
 	LEAVE_ROOM,
+	SET_MAX_NUMBER,
+	SET_NUMBER_GROUP_COUNT,
+	SET_NUMBER_PER_PLAYER,
+	POSE_NUMBER,
+	SET_URGENT,
 }
 
 public enum PROTOCOL_SERVER
@@ -43,6 +49,12 @@ public enum PROTOCOL_SERVER
 	SKIP_GUESS,
 	VERSION,
 	ROOM_ID,
+	SETTINGS,
+	UID,
+	PLAYER_NUMBERS,
+	POSE_NUMBER,
+	URGENT_PLAYER,
+	RESET_GAME_DATA,
 }
 
 public class NetPacket
@@ -162,6 +174,12 @@ public partial class NetManager
 	{
 		switch ((PROTOCOL_SERVER)packet.protocol)
 		{
+			case PROTOCOL_SERVER.UID:
+				OnGetUID(packet);
+				break;
+			case PROTOCOL_SERVER.VERSION:
+				OnVersionCheckResult(packet);
+				break;
 			case PROTOCOL_SERVER.INIT:
 				OnInitData(packet);
 				break;
@@ -189,6 +207,9 @@ public partial class NetManager
 			case PROTOCOL_SERVER.START:
 				OnGameStart(packet);
 				break;
+			case PROTOCOL_SERVER.RESET_GAME_DATA:
+				OnResetGameData(packet);
+				break;
 			case PROTOCOL_SERVER.GAMESTATE:
 				OnGameStateChanged(packet);
 				break;
@@ -213,28 +234,32 @@ public partial class NetManager
 			case PROTOCOL_SERVER.GUESS_RECORD:
 				OnGuessRecordAdded(packet);
 				break;
+			case PROTOCOL_SERVER.SKIP_GUESS:
+				OnSkipGuess(packet);
+				break;
 			case PROTOCOL_SERVER.END:
 				OnGameEnd(packet);
 				break;
 			case PROTOCOL_SERVER.CHAT:
 				OnChatMessage(packet);
 				break;
-			case PROTOCOL_SERVER.SKIP_GUESS:
-				OnSkipGuess(packet);
+			case PROTOCOL_SERVER.SETTINGS:
+				OnGetSettings(packet);
 				break;
-			case PROTOCOL_SERVER.VERSION:
-				OnVersionCheckResult(packet);
+			case PROTOCOL_SERVER.PLAYER_NUMBERS:
+				OnGetPlayerNumbers(packet);
+				break;
+			case PROTOCOL_SERVER.POSE_NUMBER:
+				OnPoseNumber(packet);
+				break;
+			case PROTOCOL_SERVER.URGENT_PLAYER:
+				OnUrgentPlayer(packet);
 				break;
 		}
 	}
 
-	private void OnInitData(NetPacket packet)
+	private void InitGuessWordData(ByteReader reader)
 	{
-		GameData.Instance.Reset();
-
-		ByteReader reader = new ByteReader(packet.data);
-		// 使用者自身的 UID
-		GameData.Instance.SelfUID = reader.ReadUInt16();
 		// 讀使用者資料
 		byte userCount = reader.ReadByte();
 		for (int i = 0; i < userCount; i++)
@@ -248,7 +273,7 @@ public partial class NetManager
 		for (int i = 0; i < playerCount; i++)
 		{
 			ushort uid = reader.ReadUInt16();
-			PlayerData player = new PlayerData { UID = uid };
+			GuessWordPlayerData player = new GuessWordPlayerData { UID = uid };
 			player.Question = reader.ReadString();
 			byte historyCount = reader.ReadByte();
 			for (int j = 0; j < historyCount; j++)
@@ -261,23 +286,89 @@ public partial class NetManager
 			GameData.Instance.PlayerDatas[uid] = player;
 		}
 		// 遊戲階段
-		GameData.Instance.CurrentState = (GameState)reader.ReadByte();
+		GameData.Instance.GuessWordData.CurrentState = (GuessWordState)reader.ReadByte();
 		// 玩家順序
 		byte orderCount = reader.ReadByte();
 		for (int i = 0; i < orderCount; i++)
 		{
 			ushort uid = reader.ReadUInt16();
-			GameData.Instance.PlayerOrder.Add(uid);
+			GameData.Instance.GuessWordData.PlayerOrder.Add(uid);
 		}
-		GameData.Instance.GuessingPlayerIndex = reader.ReadByte();
+		GameData.Instance.GuessWordData.GuessingPlayerIndex = reader.ReadByte();
 		// 投票狀況
-		GameData.Instance.VotingGuess = reader.ReadString();
+		GameData.Instance.GuessWordData.VotingGuess = reader.ReadString();
 		byte voteCount = reader.ReadByte();
 		for (int i = 0; i < voteCount; i++)
 		{
 			ushort uid = reader.ReadUInt16();
 			byte vote = reader.ReadByte();
-			GameData.Instance.Votes[uid] = vote;
+			GameData.Instance.GuessWordData.Votes[uid] = vote;
+		}
+	}
+
+	private void InitArrangeNumberData(ByteReader reader)
+	{
+		// 讀使用者資料
+		byte userCount = reader.ReadByte();
+		for (int i = 0; i < userCount; i++)
+		{
+			ushort uid = reader.ReadUInt16();
+			string name = reader.ReadString();
+			GameData.Instance.UserDatas[uid] = new UserData { UID = uid, Name = name };
+		}
+		// 讀玩家資料
+		byte playerCount = reader.ReadByte();
+		for (int i = 0; i < playerCount; i++)
+		{
+			ushort uid = reader.ReadUInt16();
+			ArrangeNumberPlayerData player = new ArrangeNumberPlayerData { UID = uid };
+			byte numberCount = reader.ReadByte();
+			for (int j = 0; j < numberCount; j++)
+			{
+				ushort number = reader.ReadUInt16();
+				player.LeftNumbers.Add(number);
+			}
+			player.IsUrgent = reader.ReadByte() == 1;
+			GameData.Instance.PlayerDatas[uid] = player;
+		}
+		// 遊戲設定
+		GameData.Instance.ArrangeNumberData.MaxNumber = reader.ReadUInt16();
+		GameData.Instance.ArrangeNumberData.NumberGroupCount = reader.ReadByte();
+		GameData.Instance.ArrangeNumberData.NumberPerPlayer = reader.ReadByte();
+		// 遊戲階段
+		GameData.Instance.ArrangeNumberData.CurrentState = (ArrangeNumberState)reader.ReadByte();
+		// 當前數字
+		GameData.Instance.ArrangeNumberData.LastPlayerUID = reader.ReadUInt16();
+		GameData.Instance.ArrangeNumberData.CurrentNumber = reader.ReadUInt16();
+
+		if (ArrangeNumberGamePage.Instance != null)
+			ArrangeNumberGamePage.Instance.SyncSettingTempValues();
+	}
+
+	private void OnGetUID(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		GameData.Instance.SelfUID = reader.ReadUInt16();
+	}
+
+	private void OnInitData(NetPacket packet)
+	{
+		GameData.Instance.Reset();
+
+		ByteReader reader = new ByteReader(packet.data);
+		GameData.Instance.CurrentGameType = (GameType)reader.ReadByte();
+
+		switch (GameData.Instance.CurrentGameType)
+		{
+			case GameType.GUESS_WORD:
+				InitGuessWordData(reader);
+				break;
+			case GameType.ARRANGE_NUMBER:
+				InitArrangeNumberData(reader);
+				break;
+			default:
+				Debug.LogError("OnInitData: 未知的遊戲類型");
+				return;
 		}
 
 		// 更新介面
@@ -302,10 +393,7 @@ public partial class NetManager
 		GameData.Instance.UserDatas[user.UID] = user;
 
 		if (GamePage.Instance != null)
-		{
-			GamePage.Instance.UpdatePlayerInfo();
-			GamePage.Instance.UpdateUserInfo();
-		}
+			GamePage.Instance.UpdateData();
 	}
 	private void OnUserDisconnect(NetPacket packet)
 	{
@@ -319,10 +407,7 @@ public partial class NetManager
 
 		// 更新使用者名稱
 		if (GamePage.Instance != null)
-		{
-			GamePage.Instance.UpdatePlayerInfo();
-			GamePage.Instance.UpdateUserInfo();
-		}
+			GamePage.Instance.UpdateData();
 	}
 	private void OnUserRename(NetPacket packet)
 	{
@@ -333,16 +418,24 @@ public partial class NetManager
 			GameData.Instance.UserDatas[uid].Name = name;
 
 		if (GamePage.Instance != null)
-		{
-			GamePage.Instance.UpdatePlayerInfo();
-			GamePage.Instance.UpdateUserInfo();
-		}
+			GamePage.Instance.UpdateData();
 	}
 	private void OnPlayerJoin(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
-		GameData.Instance.PlayerDatas[uid] = new PlayerData { UID = uid };
+		switch (GameData.Instance.CurrentGameType)
+		{
+			case GameType.GUESS_WORD:
+				GameData.Instance.PlayerDatas[uid] = new GuessWordPlayerData { UID = uid };
+				break;
+			case GameType.ARRANGE_NUMBER:
+				GameData.Instance.PlayerDatas[uid] = new ArrangeNumberPlayerData { UID = uid };
+				break;
+			default:
+				Debug.LogError("OnPlayerJoin: 未知的遊戲類型");
+				break;
+		}
 
 		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 加入了遊戲");
 
@@ -359,19 +452,15 @@ public partial class NetManager
 		ushort uid = reader.ReadUInt16();
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 			GameData.Instance.PlayerDatas.Remove(uid);
-		if (GameData.Instance.PlayerOrder.Contains(uid))
-			GameData.Instance.PlayerOrder.Remove(uid);
+		if (GameData.Instance.GuessWordData.PlayerOrder.Contains(uid))
+			GameData.Instance.GuessWordData.PlayerOrder.Remove(uid);
 
 		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 離開了遊戲");
 
 		// 更新介面
 		if (GamePage.Instance != null)
 		{
-			if (GameData.Instance.CurrentState == GameState.WAITING)
-				GamePage.Instance.UpdatePlayerInfo();
-			else
-				GamePage.Instance.UpdateData();
-
+			GamePage.Instance.UpdateData();
 			GamePage.Instance.PlaySound("pop_off");
 		}
 	}
@@ -397,10 +486,27 @@ public partial class NetManager
 		if (GamePage.Instance != null)
 			GamePage.Instance.UpdateStartButton();
 	}
-	private void OnGameStart(NetPacket packet)
+	private void OnResetGameData(NetPacket packet)
 	{
 		GameData.Instance.ResetGame();
-		GameData.Instance.CurrentState = GameState.PREPARING;
+		if (GamePage.Instance != null)
+			GamePage.Instance.UpdateData();
+	}
+	private void OnGameStart(NetPacket packet)
+	{
+		GameData.Instance.IsCountingDownStart = false;
+		switch (GameData.Instance.CurrentGameType)
+		{
+			case GameType.GUESS_WORD:
+				GameData.Instance.GuessWordData.CurrentState = GuessWordState.PREPARING;
+				break;
+			case GameType.ARRANGE_NUMBER:
+				GameData.Instance.ArrangeNumberData.CurrentState = ArrangeNumberState.PLAYING;
+				break;
+			default:
+				Debug.LogError("OnGameStart: 未知的遊戲類型");
+				return;
+		}
 
 		GameData.Instance.AddEventRecord("遊戲開始");
 
@@ -408,7 +514,7 @@ public partial class NetManager
 		if (GamePage.Instance != null)
 		{
 			GamePage.Instance.StopCountdown();
-			GamePage.Instance.ResetTempLeaveToggle();
+			GamePage.Instance.OnStartGame();
 			GamePage.Instance.UpdateData();
 
 			GamePage.Instance.PlaySound("ding");
@@ -416,14 +522,14 @@ public partial class NetManager
 	}
 	private void OnGameStateChanged(NetPacket packet)
 	{
-		GameState originState = GameData.Instance.CurrentState;
+		GuessWordState originState = GameData.Instance.GuessWordData.CurrentState;
 
 		ByteReader reader = new ByteReader(packet.data);
-		GameData.Instance.CurrentState = (GameState)reader.ReadByte();
+		GameData.Instance.GuessWordData.CurrentState = (GuessWordState)reader.ReadByte();
 
-		if (GameData.Instance.CurrentState == GameState.GUESSING)
+		if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING)
 		{
-			ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
+			ushort guessingPlayerUID = GameData.Instance.GuessWordData.GetCurrentPlayerUID();
 			if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
 				GameData.Instance.AddEventRecord($"輪到 <color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 進行猜題");
 			else
@@ -431,40 +537,40 @@ public partial class NetManager
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdateData();
-			if (GameData.Instance.CurrentState == GameState.GUESSING && GameData.Instance.GetCurrentPlayerUID() == GameData.Instance.SelfUID)
-				GamePage.Instance.StartIdleCheck();
-			if (originState == GameState.PREPARING && GameData.Instance.CurrentState == GameState.GUESSING)
-				GamePage.Instance.PlaySound("ding");
+			GuessWordGamePage.Instance.UpdateData();
+			if (GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING && GameData.Instance.GuessWordData.GetCurrentPlayerUID() == GameData.Instance.SelfUID)
+				GuessWordGamePage.Instance.StartIdleCheck();
+			if (originState == GuessWordState.PREPARING && GameData.Instance.GuessWordData.CurrentState == GuessWordState.GUESSING)
+				GuessWordGamePage.Instance.PlaySound("ding");
 		}
 	}
 	private void OnUpdatePlayerOrder(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
-		GameData.Instance.GuessingPlayerIndex = reader.ReadByte();
+		GameData.Instance.GuessWordData.GuessingPlayerIndex = reader.ReadByte();
 		bool needUpdateOrder = reader.ReadByte() == 1;
 		if (needUpdateOrder)
 		{
-			GameData.Instance.PlayerOrder.Clear();
+			GameData.Instance.GuessWordData.PlayerOrder.Clear();
 			byte orderCount = reader.ReadByte();
 			for (int i = 0; i < orderCount; i++)
 			{
 				ushort uid = reader.ReadUInt16();
-				GameData.Instance.PlayerOrder.Add(uid);
+				GameData.Instance.GuessWordData.PlayerOrder.Add(uid);
 			}
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdatePlayerInfo();
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
 			// 猜題玩家更換時強制改顯示該玩家的歷史紀錄
-			if (GameData.Instance.GuessingPlayerIndex < GameData.Instance.PlayerOrder.Count)
+			if (GameData.Instance.GuessWordData.GuessingPlayerIndex < GameData.Instance.GuessWordData.PlayerOrder.Count)
 			{
-				ushort currentPlayerUID = GameData.Instance.GetCurrentPlayerUID();
-				GamePage.Instance.ShowPlayerHistoryRecord(currentPlayerUID);
+				ushort currentPlayerUID = GameData.Instance.GuessWordData.GetCurrentPlayerUID();
+				GuessWordGamePage.Instance.ShowPlayerHistoryRecord(currentPlayerUID);
 			}
 		}
 	}
@@ -478,9 +584,11 @@ public partial class NetManager
 			// 提示自身題目已經出好了
 			if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 			{
+				GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
+
 				string colorFormat = isLocked ? "yellow" : "blue";
-				player.Question = $"<color={colorFormat}>答案已屏蔽</color>";
-				player.QuestionLocked = isLocked;
+				gwPlayer.Question = $"<color={colorFormat}>答案已屏蔽</color>";
+				gwPlayer.QuestionLocked = isLocked;
 			}
 		}
 		else
@@ -488,21 +596,23 @@ public partial class NetManager
 			string question = reader.ReadString();
 			if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
 			{
-				player.Question = question;
-				player.QuestionLocked = isLocked;
+				GuessWordPlayerData gwPlayer = player as GuessWordPlayerData;
+
+				gwPlayer.Question = question;
+				gwPlayer.QuestionLocked = isLocked;
 			}
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdatePlayerInfo();
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
 			if (GameData.Instance.UserDatas.TryGetValue(uid, out UserData user))
 			{
 				if (isLocked)
-					GamePage.Instance.ShowPopupMessage($"<color=yellow>{user.Name}</color> 的題目已指派");
+					GuessWordGamePage.Instance.ShowPopupMessage($"<color=yellow>{user.Name}</color> 的題目已指派");
 				else
-					GamePage.Instance.ShowPopupMessage($"<color=#00aa00>{user.Name}</color> 的題目已宣告");
+					GuessWordGamePage.Instance.ShowPopupMessage($"<color=#00aa00>{user.Name}</color> 的題目已宣告");
 			}
 		}
 	}
@@ -514,7 +624,7 @@ public partial class NetManager
 		string answer = reader.ReadString();
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 		{
-			PlayerData player = GameData.Instance.PlayerDatas[uid];
+			GuessWordPlayerData player = GameData.Instance.PlayerDatas[uid] as GuessWordPlayerData;
 			player.SuccessRound = successRound;
 			player.Question = $"<color=yellow>{answer}</color>"; // 更新玩家的名詞為答案
 		}
@@ -527,13 +637,13 @@ public partial class NetManager
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdateData();
-			GamePage.Instance.ShowPopupMessage(successMessage);
+			GuessWordGamePage.Instance.UpdateData();
+			GuessWordGamePage.Instance.ShowPopupMessage(successMessage);
 
 			bool isEnding = true;
-			foreach (PlayerData player in GameData.Instance.PlayerDatas.Values)
+			foreach (GuessWordPlayerData player in GameData.Instance.PlayerDatas.Values)
 			{
 				if (player.SuccessRound == 0)
 				{
@@ -546,13 +656,13 @@ public partial class NetManager
 			{
 				if (successRound > 0)
 				{
-					GamePage.Instance.PlaySound("boom");
+					GuessWordGamePage.Instance.PlaySound("boom");
 					int randomImage = UnityEngine.Random.Range(1, 4);
-					GamePage.Instance.ShowPopupImage($"brain{randomImage}");
+					GuessWordGamePage.Instance.ShowPopupImage($"brain{randomImage}");
 				}
 				else
 				{
-					GamePage.Instance.PlaySound("bye");
+					GuessWordGamePage.Instance.PlaySound("bye");
 				}
 			}
 		}
@@ -560,21 +670,21 @@ public partial class NetManager
 	private void OnPlayerGuessed(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
-		GameData.Instance.VotingGuess = reader.ReadString();
-		GameData.Instance.Votes.Clear();
-		GameData.Instance.CurrentState = GameState.VOTING;
+		GameData.Instance.GuessWordData.VotingGuess = reader.ReadString();
+		GameData.Instance.GuessWordData.Votes.Clear();
+		GameData.Instance.GuessWordData.CurrentState = GuessWordState.VOTING;
 
-		ushort guessingPlayerUID = GameData.Instance.GetCurrentPlayerUID();
+		ushort guessingPlayerUID = GameData.Instance.GuessWordData.GetCurrentPlayerUID();
 		if (GameData.Instance.UserDatas.ContainsKey(guessingPlayerUID))
-			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 提問他的名詞是否為 <color=blue>{GameData.Instance.VotingGuess}</color>");
+			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[guessingPlayerUID].Name}</color> 提問他的名詞是否為 <color=blue>{GameData.Instance.GuessWordData.VotingGuess}</color>");
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
-			GamePage.Instance.UpdateData();
-			GamePage.Instance.PlaySound("drum");
+			GuessWordGamePage.Instance.UpdateData();
+			GuessWordGamePage.Instance.PlaySound("drum");
 			if (guessingPlayerUID != GameData.Instance.SelfUID)
-				GamePage.Instance.StartIdleCheck();
+				GuessWordGamePage.Instance.StartIdleCheck();
 		}
 	}
 	private void OnPlayerVoted(NetPacket packet)
@@ -582,7 +692,7 @@ public partial class NetManager
 		ByteReader reader = new ByteReader(packet.data);
 		ushort uid = reader.ReadUInt16();
 		byte vote = reader.ReadByte();
-		GameData.Instance.Votes[uid] = vote;
+		GameData.Instance.GuessWordData.Votes[uid] = vote;
 
 		string voteText = vote switch
 		{
@@ -595,14 +705,14 @@ public partial class NetManager
 			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 表示 {voteText}");
 
 		// 更新介面
-		if (GamePage.Instance != null)
-			GamePage.Instance.UpdatePlayerInfo();
+		if (GuessWordGamePage.Instance != null)
+			GuessWordGamePage.Instance.UpdatePlayerInfo();
 	}
 	private void OnGuessAgainRequired(NetPacket packet)
 	{
 		GameData.Instance.AddEventRecord("沒有人表示意見，要求重新提出猜測");
-		if (GamePage.Instance != null)
-			GamePage.Instance.PlaySound("huh");
+		if (GuessWordGamePage.Instance != null)
+			GuessWordGamePage.Instance.PlaySound("huh");
 	}
 	private void OnGuessRecordAdded(NetPacket packet)
 	{
@@ -612,7 +722,7 @@ public partial class NetManager
 		byte result = reader.ReadByte();
 		if (GameData.Instance.PlayerDatas.ContainsKey(uid))
 		{
-			PlayerData player = GameData.Instance.PlayerDatas[uid];
+			GuessWordPlayerData player = GameData.Instance.PlayerDatas[uid] as GuessWordPlayerData;
 			player.AddGuessRecord(guess, result);
 		}
 
@@ -625,26 +735,37 @@ public partial class NetManager
 		}
 
 		// 更新介面
-		if (GamePage.Instance != null)
+		if (GuessWordGamePage.Instance != null)
 		{
 			if (uid == GameData.Instance.SelfUID)
-				GamePage.Instance.UpdateSelfGuessRecord(true);
-			GamePage.Instance.UpdateCurrentPlayerGuessRecord(true);
+				GuessWordGamePage.Instance.UpdateSelfGuessRecord(true);
+			GuessWordGamePage.Instance.UpdateCurrentPlayerGuessRecord(true);
 
 			if (messageText != null)
-				GamePage.Instance.ShowPopupMessage(messageText);
+				GuessWordGamePage.Instance.ShowPopupMessage(messageText);
 
 			if (result == 1)
-				GamePage.Instance.PlaySound("true");
+				GuessWordGamePage.Instance.PlaySound("true");
 			else
-				GamePage.Instance.PlaySound("bruh");
+				GuessWordGamePage.Instance.PlaySound("bruh");
 		}
 	}
 	private void OnGameEnd(NetPacket packet)
 	{
 		ByteReader reader = new ByteReader(packet.data);
 		bool isForceEnd = reader.ReadByte() == 1;
-		GameData.Instance.CurrentState = GameState.WAITING;
+		switch (GameData.Instance.CurrentGameType)
+		{
+			case GameType.GUESS_WORD:
+				GameData.Instance.GuessWordData.CurrentState = GuessWordState.WAITING;
+				break;
+			case GameType.ARRANGE_NUMBER:
+				GameData.Instance.ArrangeNumberData.CurrentState = ArrangeNumberState.WAITING;
+				break;
+			default:
+				Debug.LogError("OnGameEnd: Unknown game type.");
+				return;
+		}
 
 		GameData.Instance.AddEventRecord(isForceEnd ? "遊戲已被中斷" : "遊戲結束");
 
@@ -653,10 +774,7 @@ public partial class NetManager
 		{
 			GamePage.Instance.UpdateData();
 			if (!isForceEnd)
-			{
 				GamePage.Instance.ShowGameResult();
-				GamePage.Instance.PlaySound("end");
-			}
 		}
 	}
 
@@ -684,8 +802,8 @@ public partial class NetManager
 		{
 			string message = $"<color=yellow>{user.Name}</color> 跳過猜題";
 			GameData.Instance.AddEventRecord(message);
-			if (GamePage.Instance != null)
-				GamePage.Instance.ShowPopupMessage(message);
+			if (GuessWordGamePage.Instance != null)
+				GuessWordGamePage.Instance.ShowPopupMessage(message);
 		}
 	}
 
@@ -698,16 +816,150 @@ public partial class NetManager
 			RoomPage.Instance.OnEnterRoom();
 	}
 
+	private void OnGetSettings(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		GameData.Instance.ArrangeNumberData.MaxNumber = reader.ReadUInt16();
+		GameData.Instance.ArrangeNumberData.NumberGroupCount = reader.ReadByte();
+		GameData.Instance.ArrangeNumberData.NumberPerPlayer = reader.ReadByte();
+
+		if (ArrangeNumberGamePage.Instance != null)
+		{
+			ArrangeNumberGamePage.Instance.SyncSettingTempValues();
+			ArrangeNumberGamePage.Instance.UpdateSettings();
+			ArrangeNumberGamePage.Instance.PlaySound("pop_off");
+		}
+	}
+
+	private void OnGetPlayerNumbers(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		bool isUpdateAll = reader.ReadByte() == 1;
+		if (isUpdateAll)
+		{
+			byte playerCount = reader.ReadByte();
+			for (byte i = 0; i < playerCount; i++)
+			{
+				ushort uid = reader.ReadUInt16();
+				if (!GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+					continue;
+				if (player is not ArrangeNumberPlayerData)
+					continue;
+
+				ArrangeNumberPlayerData arrangeNumberPlayer = player as ArrangeNumberPlayerData;
+				arrangeNumberPlayer.LeftNumbers.Clear();
+				byte numberCount = reader.ReadByte();
+				for (int j = 0; j < numberCount; j++)
+					arrangeNumberPlayer.LeftNumbers.Add(reader.ReadUInt16());
+			}
+		}
+		else
+		{
+			if (!GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData player))
+				return;
+			if (player is not ArrangeNumberPlayerData)
+				return;
+			ArrangeNumberPlayerData arrangeNumberPlayer = player as ArrangeNumberPlayerData;
+
+			byte numberCount = reader.ReadByte();
+			for (byte i = 0; i < numberCount; i++)
+				arrangeNumberPlayer.LeftNumbers.Add(reader.ReadUInt16());
+
+			// 幫其他玩家設指定數量的未知手牌
+			foreach (var p in GameData.Instance.PlayerDatas.Values)
+			{
+				if (p is not ArrangeNumberPlayerData)
+					continue;
+				if (p.UID == GameData.Instance.SelfUID)
+					continue;
+
+				(p as ArrangeNumberPlayerData).LeftNumbers = Enumerable.Repeat<ushort>(0, numberCount).ToList();
+			}
+		}
+
+		if (ArrangeNumberGamePage.Instance != null)
+			ArrangeNumberGamePage.Instance.UpdateData();
+	}
+
+	private void OnPoseNumber(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		ushort uid = reader.ReadUInt16();
+		ushort number = reader.ReadUInt16();
+		if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+		{
+			if (player is ArrangeNumberPlayerData anPlayer)
+				anPlayer.LeftNumbers.RemoveAt(anPlayer.LeftNumbers.Count - 1);
+		}
+
+		GameData.Instance.ArrangeNumberData.LastPlayerUID = uid;
+		GameData.Instance.ArrangeNumberData.CurrentNumber = number;
+
+		GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 出了數字 <color=blue>{number}</color>");
+
+		if (ArrangeNumberGamePage.Instance != null)
+		{
+			ArrangeNumberGamePage.Instance.UpdateData();
+			ArrangeNumberGamePage.Instance.PlaySound("ora");
+		}
+	}
+
+	private void OnUrgentPlayer(NetPacket packet)
+	{
+		ByteReader reader = new ByteReader(packet.data);
+		ushort uid = reader.ReadUInt16();
+		bool isUrgent = reader.ReadByte() == 1;
+
+		bool isAutoReset = false;
+		if (GameData.Instance.PlayerDatas.TryGetValue(uid, out PlayerData player))
+		{
+			if (player is ArrangeNumberPlayerData anPlayer)
+			{
+				anPlayer.IsUrgent = isUrgent;
+				isAutoReset = anPlayer.LeftNumbers.Count == 0;
+			}
+		}
+
+		if (!isAutoReset)
+		{
+			string statusText = isUrgent ? "<color=red>急了</color>" : "<color=green>不急</color>";
+			GameData.Instance.AddEventRecord($"<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 表示 {statusText}");
+		}
+
+		if (ArrangeNumberGamePage.Instance != null)
+		{
+			ArrangeNumberGamePage.Instance.UpdateData();
+			if (!isAutoReset)
+			{
+				ArrangeNumberGamePage.Instance.ShowPopupImage(isUrgent ? "urgent" : "not_urgent");
+				ArrangeNumberGamePage.Instance.PlaySound(isUrgent ? "alert" : "quack");
+			}
+		}
+	}
+
 	// =========================================================
 
+	private void SendVersionCheck()
+	{
+		ByteWriter writer = new ByteWriter();
+		writer.WriteUInt32(GameData.GAME_VERSION);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VERSION, data);
+		SendPacket(packet);
+	}
 	public void SendName(byte[] encodedName)
 	{
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.NAME, encodedName);
 		SendPacket(packet);
 	}
-	public void SendCreateRoom()
+	public void SendCreateRoom(GameType gameType)
 	{
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CREATE_ROOM, new byte[0]);
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte((byte)gameType);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CREATE_ROOM, data);
 		SendPacket(packet);
 	}
 	public void SendJoinRoom(uint roomID)
@@ -765,31 +1017,61 @@ public partial class NetManager
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VOTE, data);
 		SendPacket(packet);
 	}
-
-	public void SendChatMessage(byte[] encodedMessage, bool isHidden)
+	public void SendChatMessage(byte[] encodedMessage, ushort hideUID)
 	{
 		ByteWriter writer = new ByteWriter();
-		writer.WriteByte((byte)(isHidden ? 1 : 0));
+		writer.WriteUInt16(hideUID);
 		writer.WriteBytes(encodedMessage);
 
 		byte[] data = writer.GetBytes();
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.CHAT, data);
 		SendPacket(packet);
 	}
-
 	public void SendGiveUp()
 	{
 		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.GIVE_UP, new byte[0]);
 		SendPacket(packet);
 	}
-
-	private void SendVersionCheck()
+	public void SendSetMaxNumber(ushort number)
 	{
 		ByteWriter writer = new ByteWriter();
-		writer.WriteUInt32(GameData.GAME_VERSION);
+		writer.WriteUInt16(number);
 
 		byte[] data = writer.GetBytes();
-		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.VERSION, data);
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_MAX_NUMBER, data);
+		SendPacket(packet);
+	}
+	public void SendSetNumberGroupCount(byte count)
+	{
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte(count);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_NUMBER_GROUP_COUNT, data);
+		SendPacket(packet);
+	}
+	public void SendSetNumberPerPlayer(byte count)
+	{
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte(count);
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_NUMBER_PER_PLAYER, data);
+		SendPacket(packet);
+	}
+	public void SendPoseNumber()
+	{
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.POSE_NUMBER, new byte[0]);
+		SendPacket(packet);
+	}
+
+	public void SendSetUrgent(bool isUrgent)
+	{
+		ByteWriter writer = new ByteWriter();
+		writer.WriteByte((byte)(isUrgent ? 1 : 0));
+
+		byte[] data = writer.GetBytes();
+		NetPacket packet = new NetPacket((byte)PROTOCOL_CLIENT.SET_URGENT, data);
 		SendPacket(packet);
 	}
 }

@@ -11,6 +11,8 @@ public class RoomPage : MonoBehaviour
 	[SerializeField]
 	private InputField RoomID_Input;
 	[SerializeField]
+	private SelectGameWindow selectGameWindow;
+	[SerializeField]
 	private PopupMessage messagePopup;
 
 	void Awake()
@@ -31,17 +33,39 @@ public class RoomPage : MonoBehaviour
 
 	public void OnEnterRoom()
 	{
-		if (GameData.Instance.RoomID == -1)
-			messagePopup.ShowMessage("目前使用者人數過多，請稍後再試");
-		else if (GameData.Instance.RoomID == -2)
-			messagePopup.ShowMessage("該房號不存在，請確認輸入後再試");
-		else
-			SceneManager.LoadScene("GameScene");
+		if (GameData.Instance.RoomID < 0)
+		{
+			switch (GameData.Instance.RoomID)
+			{
+				case -1:
+					messagePopup.ShowMessage("目前使用者人數過多，請稍後再試");
+					break;
+				case -2:
+					messagePopup.ShowMessage("該房號不存在，請確認輸入後再試");
+					break;
+				default:
+					messagePopup.ShowMessage("未知錯誤");
+					break;
+			}
+			return;
+		}
+
+		switch (GameData.Instance.CurrentGameType)
+		{
+			case GameType.GUESS_WORD:
+				SceneManager.LoadScene("GuessWordScene");
+				break;
+			case GameType.ARRANGE_NUMBER:
+				SceneManager.LoadScene("ArrangeNumberScene");
+				break;
+			default:
+				break;
+		}
 	}
 
 	public void ClickCreateRoom()
 	{
-		NetManager.Instance.SendCreateRoom();
+		selectGameWindow.SetShow(true);
 	}
 
 	public void ClickJoinRoom()
