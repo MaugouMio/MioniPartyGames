@@ -710,7 +710,7 @@ public partial class NetManager
 	}
 	private void OnGuessAgainRequired(NetPacket packet)
 	{
-		GameData.Instance.AddEventRecord("沒有人表示意見，要求重新提出猜測");
+		GameData.Instance.AddEventRecord("無法達成有效共識，要求重新提出猜測");
 		if (GuessWordGamePage.Instance != null)
 			GuessWordGamePage.Instance.PlaySound("huh");
 	}
@@ -729,7 +729,13 @@ public partial class NetManager
 		string messageText = null;
 		if (GameData.Instance.UserDatas.ContainsKey(uid))
 		{
-			string resultText = result == 1 ? "<color=#00ba00>是</color>" : "<color=#ba0000>不是</color>";
+			string resultText = result switch
+			{
+				0 => "<color=#ba0000>不是</color>",
+				1 => "<color=#00ba00>是</color>",
+				// case 2
+				_ => "<color=#baba00>無法定義</color>",
+			};
 			messageText = $"投票結果：<color=yellow>{GameData.Instance.UserDatas[uid].Name}</color> 的名詞 {resultText} <color=blue>{guess}</color>";
 			GameData.Instance.AddEventRecord(messageText);
 		}

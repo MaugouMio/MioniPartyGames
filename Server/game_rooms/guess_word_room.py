@@ -120,16 +120,17 @@ class GuessWordRoom(BaseGameRoom):
 			else:
 				abstain_votes += 1
 		
+		guessing_player_uid = self._player_order[self._current_guessing_idx]
+		player: Player = self._players[guessing_player_uid]
 		if yes_votes == no_votes:
 			self._current_guessing_idx -= 1  # 無效投票，讓玩家再猜一個類型
 			await self._broadcast_guess_again()
+			result = 2  # 2 代表無共識
 		else:
-			guessing_player_uid = self._player_order[self._current_guessing_idx]
 			result = 1 if yes_votes > no_votes else 0
-			
-			player: Player = self._players[guessing_player_uid]
-			player.guess_history.append((self.temp_guess, result))
-			await self._broadcast_guess_record(guessing_player_uid, self.temp_guess, result)
+		
+		player.guess_history.append((self.temp_guess, result))
+		await self._broadcast_guess_record(guessing_player_uid, self.temp_guess, result)
 
 		await self._advance_to_next_player()
 

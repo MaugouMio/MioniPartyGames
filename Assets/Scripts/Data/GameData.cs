@@ -53,10 +53,14 @@ public class GuessWordPlayerData : PlayerData
 
 	public void AddGuessRecord(string guess, byte result)
 	{
-		if (result == 1)
-			GuessHistory.Add($"<color=#00ba00>✓</color> 是{guess}");
-		else
-			GuessHistory.Add($"<color=#ba0000>×</color> 不是{guess}");
+		string resultText = result switch
+		{
+			0 => "<color=#ba0000>×</color> 不是",
+			1 => "<color=#00ba00>✓</color> 是",
+			// case 2
+			_ => "<color=#baba00>∆</color> 無法定義",
+		};
+		GuessHistory.Add(resultText + guess);
 	}
 }
 
