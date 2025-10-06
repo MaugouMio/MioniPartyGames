@@ -79,28 +79,44 @@ public class ServerPage : MonoBehaviour
 		if (selectedServerIndex >= 0)
 		{
 			var server = serverList.servers[selectedServerIndex];
-			ConnectPage.Instance.ConnectToServer(server.ip, server.port);
+			ConnectPage.Instance.ConnectToServer(server.ip, server.port, server.isWss);
 			GameData.Instance.ServerName = server.name;
 			PlayerPrefs.SetInt("ServerIndex", selectedServerIndex);
 			return;
 		}
 
 		string[] param = IP_Input.text.Split(':');
-		if (param.Length != 2)
+		if (param.Length == 2)
 		{
-			ConnectPage.Instance.SetConnectMessage("請輸入正確的 IP:PORT 格式");
-			return;
+			try
+			{
+				string ip = param[0];
+				int port = Int32.Parse(param[1]);
+				ConnectPage.Instance.ConnectToServer(ip, port, false);
+			}
+			catch
+			{
+				ConnectPage.Instance.SetConnectMessage("請輸入正確的 IP:PORT 格式");
+				return;
+			}
 		}
-
-		try
+		else if (param.Length == 3 && param[0] == "wss")
 		{
-			string ip = param[0];
-			int port = Int32.Parse(param[1]);
-			ConnectPage.Instance.ConnectToServer(ip, port);
+			try
+			{
+				string ip = param[1];
+				int port = Int32.Parse(param[2]);
+				ConnectPage.Instance.ConnectToServer(ip, port, true);
+			}
+			catch
+			{
+				ConnectPage.Instance.SetConnectMessage("請輸入正確的 wss:IP:PORT 格式");
+				return;
+			}
 		}
-		catch
+		else
 		{
-			ConnectPage.Instance.SetConnectMessage("請輸入正確的 IP:PORT 格式");
+			ConnectPage.Instance.SetConnectMessage("請輸入正確的 [wss:]IP:PORT 格式");
 			return;
 		}
 

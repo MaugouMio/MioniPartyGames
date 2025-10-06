@@ -115,12 +115,12 @@ public class ConnectPage : MonoBehaviour
 		ServerSubPage.SelectServer(index);
 	}
 
-	public void ConnectToServer(string ip, int port)
+	public void ConnectToServer(string ip, int port, bool isWss)
 	{
 		ConnectingMask.SetActive(true);
 		ServerSubPage.Show(false);
 
 		SetConnectMessage("連線中...");
-		NetManager.Instance.Connect(ip, port);
+		NetManager.Instance.Connect(ip, port, isWss);
 	}
 }

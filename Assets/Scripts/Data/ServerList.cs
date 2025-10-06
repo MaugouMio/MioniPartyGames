@@ -12,6 +12,7 @@ public class ServerList : ScriptableObject
 		public string name;
 		public string ip;
 		public int port;
+		public bool isWss;
 	}
 
 	public List<ServerData> servers = new List<ServerData>();
