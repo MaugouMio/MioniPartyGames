@@ -152,6 +152,17 @@ public class ArrangeNumberData
 		// 沒有任何玩家還有剩餘數字
 		return !GameData.Instance.PlayerDatas.Values.Any(player => (player is ArrangeNumberPlayerData anPlayer && anPlayer.LeftNumbers.Count > 0));
 	}
+
+	public bool CanSeeAllPlayerNumbers()
+	{
+		if (CurrentState != ArrangeNumberState.PLAYING)
+			return true;
+		if (!GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData selfPlayer))
+			return true;
+		if (selfPlayer is not ArrangeNumberPlayerData selfANPlayer)
+			return true;
+		return selfANPlayer.LeftNumbers.Count == 0;
+	}
 }
 
 public class GameData

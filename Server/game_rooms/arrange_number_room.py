@@ -177,6 +177,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 			if player.is_urgent:  # 出完數字就沒什麼好急的了
 				player.is_urgent = False
 				await self._boardcast_urgent_players(uid, False)
+			await self._send_all_player_numbers(player.user)  # 猜完的玩家可以看所有玩家的數字狀況
 			await self._check_left_numbers()
 	
 	async def _request_set_urgent(self, uid: int, is_urgent: bool):
@@ -248,7 +249,7 @@ class ArrangeNumberRoom(BaseGameRoom):
 	
 	async def _send_self_numbers(self, player: Player):
 		data = bytes()
-		data += (0).to_bytes(1, byteorder="little")
+		data += (0).to_bytes(1, byteorder="little")  # 0 代表更新玩家自身，1 代表更新所有玩家
 		data += len(player.numbers).to_bytes(1, byteorder="little")
 		for number in player.numbers:
 			data += number.to_bytes(2, byteorder="little")
@@ -259,17 +260,33 @@ class ArrangeNumberRoom(BaseGameRoom):
 		except:
 			pass
 
-	async def _broadcast_all_player_numbers(self, exclude_clients: Collection[int] = {}):
+	def _get_all_player_numbers_packet(self) -> bytes:
 		player_list: list[Player] = cast(list[Player], self._players.values())
 
 		data = bytes()
-		data += (1).to_bytes(1, byteorder="little")  # 0 代表更新給玩家自身，1 代表更新給所有觀眾
 		data += len(player_list).to_bytes(1, byteorder="little")
 		for player in player_list:
 			data += player.user.uid.to_bytes(2, byteorder="little")
 			data += len(player.numbers).to_bytes(1, byteorder="little")
 			for number in player.numbers:
 				data += number.to_bytes(2, byteorder="little")
+		return data
+
+	async def _send_all_player_numbers(self, user: User):
+		data = bytes()
+		data += (1).to_bytes(1, byteorder="little")  # 0 代表更新玩家自身，1 代表更新所有玩家
+		data += self._get_all_player_numbers_packet()
+		
+		packet = network.new_packet(PROTOCOL_SERVER.PLAYER_NUMBERS, data)
+		try:
+			await user.socket.send(packet)
+		except:
+			pass
+
+	async def _broadcast_all_player_numbers(self, exclude_clients: Collection[int] = {}):
+		data = bytes()
+		data += (1).to_bytes(1, byteorder="little")  # 0 代表更新玩家自身，1 代表更新所有玩家
+		data += self._get_all_player_numbers_packet()
 		
 		packet = network.new_packet(PROTOCOL_SERVER.PLAYER_NUMBERS, data)
 		await self._broadcast(packet, exclude_clients)

@@ -28,14 +28,14 @@ public class ArrangeNumberPlayerInfo : PlayerInfo
 		}
 		else
 		{
-			if (GameData.Instance.ArrangeNumberData.CurrentState == ArrangeNumberState.PLAYING && GameData.Instance.IsPlayer())
-			{
-				leftNumberText.text = $"<i><color=#999999>剩餘數字{anPlayerData.LeftNumbers.Count}個</color></i>";
-			}
-			else
+			if (GameData.Instance.ArrangeNumberData.CanSeeAllPlayerNumbers())
 			{
 				var ascendingNumbers = anPlayerData.LeftNumbers.OrderBy(x => x);
 				leftNumberText.text = $"<i><color=#999999>持有數字：{string.Join(", ", ascendingNumbers)}</color></i>";
+			}
+			else
+			{
+				leftNumberText.text = $"<i><color=#999999>剩餘數字{anPlayerData.LeftNumbers.Count}個</color></i>";
 			}
 			UrgentImage.SetActive(anPlayerData.IsUrgent);
 			stateMask.color = Color.clear;
