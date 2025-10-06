@@ -36,10 +36,6 @@ public class ArrangeNumberGamePage : GamePage
 	private Text LastPlayerText;
 	[SerializeField]
 	private GameObject buttonList;
-	[SerializeField]
-	private GameObject UrgentButton;
-	[SerializeField]
-	private GameObject NotUrgentButton;
 
 	[SerializeField]
 	private TextList SelfNumberList;
@@ -152,17 +148,8 @@ public class ArrangeNumberGamePage : GamePage
 		UrgentPlayersObject.SetActive(urgentList.Count > 0);
 		UrgentPlayersList.UpdateData(urgentList);
 
-		if (GameData.Instance.PlayerDatas.TryGetValue(GameData.Instance.SelfUID, out PlayerData selfPlayer))
-		{
-			if (selfPlayer is ArrangeNumberPlayerData selfANPlayer)
-			{
-				buttonList.SetActive(selfANPlayer.LeftNumbers.Count > 0);
-				UrgentButton.SetActive(!selfANPlayer.IsUrgent);
-				NotUrgentButton.SetActive(selfANPlayer.IsUrgent);
-				return;
-			}
-		}
-		buttonList.SetActive(false);
+		// 可以看到所有玩家數字代表沒有需要操作
+		buttonList.SetActive(!GameData.Instance.ArrangeNumberData.CanSeeAllPlayerNumbers());
 	}
 
 	public override void StartCountdown(int seconds)

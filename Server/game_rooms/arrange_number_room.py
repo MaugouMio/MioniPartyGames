@@ -187,8 +187,9 @@ class ArrangeNumberRoom(BaseGameRoom):
 			return
 		
 		player: Player = self._players[uid]
-		if player.is_urgent == is_urgent:
-			return
+		# 取消重複檢查，讓玩家可以隨時表示自己的狀態
+		# if player.is_urgent == is_urgent:
+		# 	return
 		if not player.numbers:  # 沒有數字可以出了就沒有急不急的問題
 			return
 		
