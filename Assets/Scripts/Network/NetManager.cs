@@ -40,7 +40,7 @@ public partial class NetManager : MonoBehaviour
 		await Disconnect();
 	}
 
-	public async void Connect(string host, int port)
+	public async void Connect(string host, int port, bool isWss)
 	{
 		if (m_WebSocket != null)
 		{
@@ -50,7 +50,8 @@ public partial class NetManager : MonoBehaviour
 
 		try
 		{
-			m_WebSocket = new WebSocket($"wss://{host}:{port}");
+			string protocol = isWss ? "wss" : "ws";
+			m_WebSocket = new WebSocket($"{protocol}://{host}:{port}");
 
 			m_WebSocket.OnOpen += () =>
 			{
